@@ -99,9 +99,10 @@ int main(void)
   while (1)
   {
     HAL_Delay(1000);
-    if ( CDC_Receive_FS(testDataToRead, &Len) == USBD_OK){
+    //if ( CDC_Receive_FS(testDataToRead, &Len) == USBD_OK){
       CDC_Transmit_FS(testDataToSend, 11);
-    }
+      
+    //}
   }
   /* USER CODE END WHILE */
 
