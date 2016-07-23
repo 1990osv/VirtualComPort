@@ -1,0 +1,6 @@
+/PuTTY PORTABLE/
+/MDK-ARM/
+/Drivers/
+/Middlewares/
+*.ioc
+*.mxproject
