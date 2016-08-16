@@ -35,7 +35,9 @@
 #include "usb_device.h"
 
 /* USER CODE BEGIN Includes */
-#include "usbd_cdc_if.h"
+
+#include "protocol.h"
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -56,14 +58,12 @@ static void MX_I2C3_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-unsigned char crcCompute(unsigned char *data, unsigned char len);
+
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-  uint8_t testDataToSend[11];
-  uint8_t testDataToRead[9]; 
-  uint8_t lastData;
-  uint32_t Len=9;
+
+  
 /* USER CODE END 0 */
 
 int main(void)
@@ -89,11 +89,6 @@ int main(void)
   MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN 2 */
-  for (uint8_t i = 0; i < 10; i++)
-  {
-    testDataToSend[i] = i+0x30;
-  } 
-  testDataToSend[10] = crcCompute(testDataToSend,10);
   HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13);
   /* USER CODE END 2 */
   
@@ -101,16 +96,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    HAL_Delay(1);    
-    if ( CDC_Receive_FS(testDataToRead, &Len) == USBD_OK){
-      if(lastData != testDataToRead[0]){
-        lastData = testDataToRead[0];
-        testDataToSend[0] = testDataToRead[0];
-        testDataToSend[10] = crcCompute(testDataToSend,10);
-        CDC_Transmit_FS(testDataToSend, 11);
-        HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
-      }
-    }
+        HAL_Delay(1);  
+          transfer();
   }
   /* USER CODE END WHILE */
 
@@ -191,7 +178,7 @@ void MX_I2C3_Init(void)
   hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLED;
   HAL_I2C_Init(&hi2c3);
   HAL_I2C_Master_Transmit(&hi2c3,0x27,temp,13,100);
-}
+} 
 
 /** Configure pins as 
         * Analog 
@@ -329,14 +316,7 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-unsigned char crcCompute(unsigned char *data, unsigned char len)
-{
-    unsigned char i, crcComp;
-    crcComp = data[0];
-    for (i = 1; i < len; ++i)
-        crcComp ^= data[i];
-    return crcComp;
-}
+
 
 /* USER CODE END 4 */
 
