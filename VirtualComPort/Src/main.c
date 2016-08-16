@@ -98,6 +98,8 @@ int main(void)
   {
         HAL_Delay(1);  
           transfer();
+          if(needRunModel) 
+                  model();
   }
   /* USER CODE END WHILE */
 
