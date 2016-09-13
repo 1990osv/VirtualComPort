@@ -106,9 +106,9 @@ uint16_t umTarget;
         {
                 umTarget =  in.msg.angleL | (in.msg.angleH << 8);
                 if(umTarget > umPosition) 
-                        umPosition -= umVelosity;
-                else if(umTarget < umPosition)
                         umPosition += umVelosity;
+                else if(umTarget < umPosition)
+                        umPosition -= umVelosity;
         }
         else
         {
