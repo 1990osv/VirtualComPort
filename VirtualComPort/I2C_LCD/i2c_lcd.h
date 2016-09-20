@@ -40,7 +40,7 @@ extern void delay(uint32_t t);
 void lcd_initialisation(void); // Инициализация ЖКИ
 void lcd_Backlight(uint8_t state); // Включение/отключение подсветки
 void lcd_Goto(uint8_t row, uint8_t col); // Переход на строка/позицию
-void lcd_PrintC(const uint8_t *str); // Вывести строку
+void lcd_PrintC(char *str); // Вывести строку
 
 
 // Функции внурненние

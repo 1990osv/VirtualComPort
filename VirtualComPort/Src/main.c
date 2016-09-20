@@ -50,10 +50,8 @@ CAN_HandleTypeDef hcan1;
 
 I2C_HandleTypeDef hi2c3;
 
-char lcdLine0[20];
-char lcdLine1[20];
-char lcdLine2[20];
-char lcdLine3[20];
+char str5[5];
+
 
 /* USER CODE END PV */
 
@@ -71,16 +69,10 @@ static void Error_Handler(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-void lcd_out(void)
+void lcd_PrintXY(char *str, unsigned char x, unsigned char y)
 {
-        lcd_Goto(0,0);
-        lcd_PrintC(lcdLine0);
-        lcd_Goto(1,0);
-        lcd_PrintC(lcdLine1);        
-        lcd_Goto(2,0);
-        lcd_PrintC(lcdLine2);
-        lcd_Goto(3,0);
-        lcd_PrintC(lcdLine3);
+        lcd_Goto(y,x);
+        lcd_PrintC(str);        
 }
 /* USER CODE END 0 */
 
@@ -110,25 +102,44 @@ int main(void)
         HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13);
 
         lcd_initialisation();
-
+				lcd_PrintXY("count  = ",0,0); 
+				lcd_PrintXY("azimut = ",0,1);
+				lcd_PrintXY("angle  = ",0,2);
+				lcd_PrintXY("phase  = ",0,3);
 /* USER CODE END 2 */
 
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
-        printDelay=10;
+        printDelay=50;
         while (1)
         {
                 HAL_Delay(1);  
-                if(--printDelay==0)
-                {
-                        printDelay=10;
-                        sprintf(lcdLine0,"count  = %d      ", lastCiclCount);
-                        sprintf(lcdLine1,"azimut = %d      ", azPosition);
-                        sprintf(lcdLine2,"angle  = %d      ", umPosition);
-                        sprintf(lcdLine3,"phase  = %d      ", fvPosition);
-                        lcd_out();
+                  switch(--printDelay)
+									{
+										case 10: 
+										{
+											sprintf(str5,"%d", lastCiclCount); 
+											lcd_PrintXY(str5,10,0); 
+										} break;
+										case 20: 
+										{
+											sprintf(str5,"%d", azPosition); 
+											lcd_PrintXY(str5,10,1);
+										} break;
+										case 30: 
+										{
+											sprintf(str5,"%d", umPosition);		
+											lcd_PrintXY(str5,10,2);
+										} break;
+										case 40: 
+										{
+											sprintf(str5,"%d", fvPosition);    
+											lcd_PrintXY(str5,10,3);
+										} break;
+										case 0: printDelay=50; break;
+									}										
                 }
-        }
+        
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
