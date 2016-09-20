@@ -58,7 +58,12 @@ void SysTick_Handler(void)
   HAL_SYSTICK_IRQHandler();
   /* USER CODE BEGIN SysTick_IRQn 1 */
   tickModel(); 
-  /* USER CODE END SysTick_IRQn 1 */
+  
+	transfer();
+	if(needRunModel) 
+		model();
+	/* USER CODE END SysTick_IRQn 1 */
+	
 }
 
 /******************************************************************************/
