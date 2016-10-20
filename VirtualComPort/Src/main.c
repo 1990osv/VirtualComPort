@@ -51,7 +51,7 @@ CAN_HandleTypeDef hcan1;
 I2C_HandleTypeDef hi2c3;
 
 char str5[5];
-
+char str6[6];
 
 /* USER CODE END PV */
 
@@ -69,11 +69,75 @@ static void Error_Handler(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+
+
 void lcd_PrintXY(char *str, unsigned char x, unsigned char y)
 {
         lcd_Goto(y,x);
         lcd_PrintC(str);        
 }
+
+//******************************************************************************
+ 
+volatile unsigned int *DWT_CYCCNT  = (volatile unsigned int *)0xE0001004; //address of the register
+volatile unsigned int *DWT_CONTROL = (volatile unsigned int *)0xE0001000; //address of the register
+volatile unsigned int *SCB_DEMCR   = (volatile unsigned int *)0xE000EDFC; //address of the register
+ 
+//******************************************************************************
+ 
+void EnableTiming(void)
+{
+  *SCB_DEMCR = *SCB_DEMCR | 0x01000000;
+  *DWT_CYCCNT = 0; // reset the counter
+  *DWT_CONTROL = *DWT_CONTROL | 1 ; // enable the counter
+}
+ 
+//******************************************************************************
+ 
+void TimingDelay(unsigned int tick)
+{
+  unsigned int start, current;
+ 
+  start = *DWT_CYCCNT;
+ 
+  do
+  {
+    current = *DWT_CYCCNT;
+  } while((current - start) < tick);
+}
+ 
+//******************************************************************************
+
+uint16_t pinToggleReadSSI ( void )
+{
+        uint8_t bit_count;
+        uint16_t u16result = 0;
+        GPIO_PinState pinState;
+        
+        u16result = 0;
+        
+        for (bit_count = 0; bit_count <= 16; bit_count++)
+        {
+                // falling edge on clock port
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
+                
+                // left-shift the current result
+                u16result = (u16result << 1);
+                // read the port data
+                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); //u8portdata = SSI_DTA_PORT;
+                // rising edge on clock port, data changes
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
+                // evaluate the port data (port set or clear)
+                if ( pinState != GPIO_PIN_RESET)
+                {
+                        // bit is set, set LSB of result
+                        u16result = u16result | 0x01;
+                } // if
+        } // for
+        return u16result;
+}
+
+
 /* USER CODE END 0 */
 
 int main(void)
@@ -110,34 +174,36 @@ int main(void)
 
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
+        EnableTiming();
+
         printDelay=50;
         while (1)
         {
                 HAL_Delay(1);  
-                  switch(--printDelay)
-									{
-										case 10: 
-										{
-											sprintf(str5,"%d", lastCiclCount); 
-											lcd_PrintXY(str5,10,0); 
-										} break;
-										case 20: 
-										{
-											sprintf(str5,"%d", azPosition); 
-											lcd_PrintXY(str5,10,1);
-										} break;
-										case 30: 
-										{
-											sprintf(str5,"%d", umPosition);		
-											lcd_PrintXY(str5,10,2);
-										} break;
-										case 40: 
-										{
-											sprintf(str5,"%d", fvPosition);    
-											lcd_PrintXY(str5,10,3);
-										} break;
-										case 0: printDelay=50; break;
-									}										
+                switch(--printDelay)
+                {
+                        case 10: 
+                        {
+                                sprintf(str5,"%d", lastCiclCount); 
+                                lcd_PrintXY(str5,10,0); 
+                        } break;
+                        case 20: 
+                        {
+                                sprintf(str6,"%d      ", pinToggleReadSSI());//azPosition); 
+                                lcd_PrintXY(str6,10,1);
+                        } break;
+                        case 30: 
+                        {
+                                sprintf(str5,"%d", umPosition);		
+                                lcd_PrintXY(str5,10,2);
+                        } break;
+                        case 40: 
+                        {
+                                sprintf(str5,"%d", fvPosition);    
+                                lcd_PrintXY(str5,10,3);
+                        } break;
+                        case 0: printDelay=50; break;
+                }										
                 }
         
         /* USER CODE END WHILE */
@@ -365,7 +431,7 @@ static void Error_Handler(void)
         while(1)
         {
                 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_15); 
-                HAL_Delay(100);
+                HAL_Delay(500);
         }
 }
 
@@ -388,8 +454,8 @@ ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 /* USER CODE END 6 */
 while(1)
 {
-HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); 
-HAL_Delay(100);
+        HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); 
+        HAL_Delay(100);
 }
 }
 
