@@ -77,12 +77,6 @@ void lcd_PrintXY(char *str, unsigned char x, unsigned char y)
         lcd_PrintC(str);        
 }
 
-//******************************************************************************
- 
-volatile unsigned int *DWT_CYCCNT  = (volatile unsigned int *)0xE0001004; //address of the register
-volatile unsigned int *DWT_CONTROL = (volatile unsigned int *)0xE0001000; //address of the register
-volatile unsigned int *SCB_DEMCR   = (volatile unsigned int *)0xE000EDFC; //address of the register
- 
 uint16_t pinToggleReadSSI ( void )
 {
         uint8_t bit_count;
@@ -228,7 +222,7 @@ void MX_CAN1_Init(void)
 {
 
 	hcan1.Instance = CAN1;
-	hcan1.Init.Prescaler = 16;
+	hcan1.Init.Prescaler = 8;
 	hcan1.Init.Mode = CAN_MODE_NORMAL;
 	hcan1.Init.SJW = CAN_SJW_1TQ;
 	hcan1.Init.BS1 = CAN_BS1_1TQ;
