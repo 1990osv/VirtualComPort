@@ -152,7 +152,7 @@ int main(void)
                 {
                         case 10: 
                         {
-                                sprintf(str5,"%d", lastCiclCount); 
+                                sprintf(str5,"%d  ", lastCiclCount); 
                                 lcd_PrintXY(str5,10,0); 
                         } break;
                         case 20: 
