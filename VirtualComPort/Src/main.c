@@ -47,6 +47,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 CAN_HandleTypeDef hcan1;
+CAN_FilterConfTypeDef hcan1filter;
+CanRxMsgTypeDef canRxMsg;
+CanTxMsgTypeDef canTxMsg;
+
+uint32_t canStatus;
 
 I2C_HandleTypeDef hi2c3;
 
@@ -144,33 +149,48 @@ int main(void)
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
 
+        canTxMsg.IDE = 0x321;
+        canTxMsg.ExtId = 0x1;
+        canTxMsg.RTR = CAN_RTR_DATA;
+        canTxMsg.IDE = CAN_ID_STD;
+        canTxMsg.DLC = 1;
+        canTxMsg.Data[0] = 0;
+
+        HAL_CAN_Receive(&hcan1,1,1000);
+
         printDelay=50;
         while (1)
         {
                 HAL_Delay(1);  
+                canStatus = hcan1.State;
                 switch(--printDelay)
                 {
                         case 10: 
                         {
-                                sprintf(str5,"%d  ", lastCiclCount); 
-                                lcd_PrintXY(str5,10,0); 
+                                sprintf(str6,"%d     ", lastCiclCount); 
+                                lcd_PrintXY(str6,10,0); 
+                                //canTxMsg.Data[0]++;
+                                //HAL_CAN_Transmit(&hcan1, 100);
                         } break;
                         case 20: 
                         {
-                                sprintf(str6,"%d      ", pinToggleReadSSI());//azPosition); 
+                                sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
                                 lcd_PrintXY(str6,10,1);
                         } break;
                         case 30: 
                         {
-                                sprintf(str5,"%d", umPosition);		
-                                lcd_PrintXY(str5,10,2);
+                                sprintf(str6,"%d     ", umPosition);		
+                                lcd_PrintXY(str6,10,2);
                         } break;
                         case 40: 
                         {
-                                sprintf(str5,"%d", fvPosition);    
-                                lcd_PrintXY(str5,10,3);
+                                sprintf(str6,"%d     ", fvPosition);    
+                                lcd_PrintXY(str6,10,3);
                         } break;
-                        case 0: printDelay=50; break;
+                        case 0: 
+                        {
+                                printDelay=50; 
+                        } break;
                 }										
                 }
         
@@ -220,21 +240,35 @@ void SystemClock_Config(void)
 /* CAN1 init function */
 void MX_CAN1_Init(void)
 {
-
 	hcan1.Instance = CAN1;
-	hcan1.Init.Prescaler = 8;
 	hcan1.Init.Mode = CAN_MODE_NORMAL;
+	hcan1.Init.Prescaler = 2; //2400000/1000000/2 = 12
 	hcan1.Init.SJW = CAN_SJW_1TQ;
-	hcan1.Init.BS1 = CAN_BS1_1TQ;
-	hcan1.Init.BS2 = CAN_BS2_1TQ;
+	hcan1.Init.BS1 = CAN_BS1_8TQ;
+	hcan1.Init.BS2 = CAN_BS2_3TQ;
 	hcan1.Init.TTCM = DISABLE;
 	hcan1.Init.ABOM = DISABLE;
 	hcan1.Init.AWUM = DISABLE;
-	hcan1.Init.NART = DISABLE;
+	hcan1.Init.NART = ENABLE;//DISABLE;
 	hcan1.Init.RFLM = DISABLE;
 	hcan1.Init.TXFP = DISABLE;
+        hcan1.pRxMsg = &canRxMsg;
+        hcan1.pTxMsg = &canTxMsg;
+        
 	HAL_CAN_Init(&hcan1);
-
+        
+        hcan1filter.BankNumber = 0;
+        hcan1filter.FilterMode = CAN_FILTERMODE_IDMASK;
+        hcan1filter.FilterScale = CAN_FILTERSCALE_32BIT;
+        hcan1filter.FilterIdHigh = 0x0000;
+        hcan1filter.FilterIdLow = 0x0000;
+        hcan1filter.FilterMaskIdHigh = 0x0000;
+        hcan1filter.FilterMaskIdLow = 0x0000;
+        hcan1filter.FilterFIFOAssignment = 0;
+        hcan1filter.FilterActivation = ENABLE;
+     
+        HAL_CAN_ConfigFilter(&hcan1, &hcan1filter);
+        
 }
 
 /* I2C3 init function */
@@ -277,119 +311,126 @@ PB9   ------> I2C1_SDA
 void MX_GPIO_Init(void)
 {
 
-GPIO_InitTypeDef GPIO_InitStruct;
+        GPIO_InitTypeDef GPIO_InitStruct;
 
-/* GPIO Ports Clock Enable */
-__GPIOE_CLK_ENABLE();
-__GPIOC_CLK_ENABLE();
-__GPIOH_CLK_ENABLE();
-__GPIOA_CLK_ENABLE();
-__GPIOB_CLK_ENABLE();
-__GPIOD_CLK_ENABLE();
+        /* GPIO Ports Clock Enable */
+        __GPIOE_CLK_ENABLE();
+        __GPIOC_CLK_ENABLE();
+        __GPIOH_CLK_ENABLE();
+        __GPIOA_CLK_ENABLE();
+        __GPIOB_CLK_ENABLE();
+        __GPIOD_CLK_ENABLE();
 
-/*Configure GPIO pin : PE3 */
-GPIO_InitStruct.Pin = GPIO_PIN_3;
-GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+        /*Configure GPIO pin : PE3 */
+        GPIO_InitStruct.Pin = GPIO_PIN_3;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-/*Configure GPIO pin : PC0 */
-GPIO_InitStruct.Pin = GPIO_PIN_0;
-GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+        /*Configure GPIO pin : PC0 */
+        GPIO_InitStruct.Pin = GPIO_PIN_0;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-/*Configure GPIO pin : PC3 */
-GPIO_InitStruct.Pin = GPIO_PIN_3;
-GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+        /*Configure GPIO pin : PC3 */
+        GPIO_InitStruct.Pin = GPIO_PIN_3;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+        HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-/*Configure GPIO pin : PA0 */
-GPIO_InitStruct.Pin = GPIO_PIN_0;
-GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+        /*Configure GPIO pin : PA0 */
+        GPIO_InitStruct.Pin = GPIO_PIN_0;
+        GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-/*Configure GPIO pin : PA4 */
-GPIO_InitStruct.Pin = GPIO_PIN_4;
-GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+        /*Configure GPIO pin : PA4 */
+        GPIO_InitStruct.Pin = GPIO_PIN_4;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-/*Configure GPIO pins : PA5 PA6 PA7 */
-GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
-HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+        /*Configure GPIO pins : PA5 PA6 PA7 */
+        GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 
-/*Configure GPIO pins : PB2 PB14 */
-GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_14;
-GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+        /*Configure GPIO pins : PB2 PB14 */
+        GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_14;
+        GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-/*Configure GPIO pin : PB10 */
-GPIO_InitStruct.Pin = GPIO_PIN_10;
-GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+        /*Configure GPIO pin : PB10 */
+        GPIO_InitStruct.Pin = GPIO_PIN_10;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-/*Configure GPIO pin : PB15 */
-GPIO_InitStruct.Pin = GPIO_PIN_15;
-GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+        /*Configure GPIO pin : PB15 */
+        GPIO_InitStruct.Pin = GPIO_PIN_15;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-/*Configure GPIO pins : PD8 PD10 PD5 */
-GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_10|GPIO_PIN_5;
-GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+        /*Configure GPIO pins : PD8 PD10 PD5 */
+        GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_10|GPIO_PIN_5;
+        GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-/*Configure GPIO pins : PD9 PD11 PD12 PD13 
-PD14 PD15 PD4 */
-GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13 
-|GPIO_PIN_14|GPIO_PIN_15|GPIO_PIN_4;
-GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+        /*Configure GPIO pins : PD9 PD11 PD12 PD13 
+        PD14 PD15 PD4 */
+        GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13 
+        |GPIO_PIN_14|GPIO_PIN_15|GPIO_PIN_4;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-/*Configure GPIO pins : PC7 PC10 PC12 */
-GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_10|GPIO_PIN_12;
-GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+        /*Configure GPIO pins : PC7 PC10 PC12 */
+        GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_10|GPIO_PIN_12;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+        HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-/*Configure GPIO pins : PB6 PB9 */
-GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_9;
-GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-GPIO_InitStruct.Pull = GPIO_PULLUP;
-GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+        /*Configure GPIO pins : PB6 PB9 */
+        GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_9;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+        GPIO_InitStruct.Pull = GPIO_PULLUP;
+        GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+        GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-/*Configure GPIO pin : PE1 */
-GPIO_InitStruct.Pin = GPIO_PIN_1;
-GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+        /*Configure GPIO pin : PE1 */
+        GPIO_InitStruct.Pin = GPIO_PIN_1;
+        GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
+//        /* Configure CAN RX and TX pins */
+//	GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+//	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+//	GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+//	GPIO_InitStruct.Pull  = GPIO_PULLUP;
+//      GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+//	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 }
 
 /* USER CODE BEGIN 4 */
