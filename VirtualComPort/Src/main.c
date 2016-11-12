@@ -144,7 +144,7 @@ int main(void)
 				lcd_PrintXY("azimut = ",0,1);
 				lcd_PrintXY("angle  = ",0,2);
 				lcd_PrintXY("phase  = ",0,3);
-/* USER CODE END 2 */
+        /* USER CODE END 2 */
 
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
@@ -154,14 +154,16 @@ int main(void)
         canTxMsg.RTR = CAN_RTR_DATA;
         canTxMsg.IDE = CAN_ID_STD;
         canTxMsg.DLC = 1;
-        canTxMsg.Data[0] = 0;
+        canTxMsg.Data[0] = 50;
 
-        HAL_CAN_Receive(&hcan1,1,1000);
+        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
 
         printDelay=50;
         while (1)
         {
-                HAL_Delay(1);  
+                HAL_Delay(10);  
                 canStatus = hcan1.State;
                 switch(--printDelay)
                 {
@@ -169,11 +171,12 @@ int main(void)
                         {
                                 sprintf(str6,"%d     ", lastCiclCount); 
                                 lcd_PrintXY(str6,10,0); 
-                                //canTxMsg.Data[0]++;
-                                //HAL_CAN_Transmit(&hcan1, 100);
+                                canTxMsg.Data[0]++;
+                                HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
                         } break;
                         case 20: 
                         {
+
                                 sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
                                 lcd_PrintXY(str6,10,1);
                         } break;
@@ -184,6 +187,7 @@ int main(void)
                         } break;
                         case 40: 
                         {
+                                HAL_CAN_Transmit(&hcan1, 10);
                                 sprintf(str6,"%d     ", fvPosition);    
                                 lcd_PrintXY(str6,10,3);
                         } break;
@@ -241,22 +245,27 @@ void SystemClock_Config(void)
 void MX_CAN1_Init(void)
 {
 	hcan1.Instance = CAN1;
-	hcan1.Init.Mode = CAN_MODE_NORMAL;
-	hcan1.Init.Prescaler = 2; //2400000/1000000/2 = 12
+	hcan1.Init.Mode = CAN_MODE_SILENT_LOOPBACK;//CAN_MODE_NORMAL;
+	hcan1.Init.Prescaler = 4; //2400000/500000/4 = 12
 	hcan1.Init.SJW = CAN_SJW_1TQ;
-	hcan1.Init.BS1 = CAN_BS1_8TQ;
-	hcan1.Init.BS2 = CAN_BS2_3TQ;
+	hcan1.Init.BS1 = CAN_BS1_7TQ;
+	hcan1.Init.BS2 = CAN_BS2_4TQ;
 	hcan1.Init.TTCM = DISABLE;
 	hcan1.Init.ABOM = DISABLE;
 	hcan1.Init.AWUM = DISABLE;
-	hcan1.Init.NART = ENABLE;//DISABLE;
+	hcan1.Init.NART = DISABLE;//ENABLE;
 	hcan1.Init.RFLM = DISABLE;
 	hcan1.Init.TXFP = DISABLE;
+
         hcan1.pRxMsg = &canRxMsg;
         hcan1.pTxMsg = &canTxMsg;
         
 	HAL_CAN_Init(&hcan1);
+
+
+
         
+        hcan1filter.FilterNumber = 0;        
         hcan1filter.BankNumber = 0;
         hcan1filter.FilterMode = CAN_FILTERMODE_IDMASK;
         hcan1filter.FilterScale = CAN_FILTERSCALE_32BIT;
@@ -269,6 +278,7 @@ void MX_CAN1_Init(void)
      
         HAL_CAN_ConfigFilter(&hcan1, &hcan1filter);
         
+        HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
 }
 
 /* I2C3 init function */
