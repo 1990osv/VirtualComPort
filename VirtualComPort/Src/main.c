@@ -163,7 +163,7 @@ int main(void)
         printDelay=50;
         while (1)
         {
-                HAL_Delay(10);  
+                HAL_Delay(1);  
                 canStatus = hcan1.State;
                 switch(--printDelay)
                 {
@@ -171,8 +171,8 @@ int main(void)
                         {
                                 sprintf(str6,"%d     ", lastCiclCount); 
                                 lcd_PrintXY(str6,10,0); 
-                                canTxMsg.Data[0]++;
-                                HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
+                                //HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
+                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,1000);
                         } break;
                         case 20: 
                         {
@@ -188,6 +188,7 @@ int main(void)
                         case 40: 
                         {
                                 HAL_CAN_Transmit(&hcan1, 10);
+                                canTxMsg.Data[0]++;
                                 sprintf(str6,"%d     ", fvPosition);    
                                 lcd_PrintXY(str6,10,3);
                         } break;
@@ -245,15 +246,15 @@ void SystemClock_Config(void)
 void MX_CAN1_Init(void)
 {
 	hcan1.Instance = CAN1;
-	hcan1.Init.Mode = CAN_MODE_SILENT_LOOPBACK;//CAN_MODE_NORMAL;
-	hcan1.Init.Prescaler = 4; //2400000/500000/4 = 12
+	hcan1.Init.Mode = CAN_MODE_LOOPBACK;//CAN_MODE_SILENT_LOOPBACK;//CAN_MODE_NORMAL;
+	hcan1.Init.Prescaler = 2; //2400000/1000000/2 = 12
 	hcan1.Init.SJW = CAN_SJW_1TQ;
-	hcan1.Init.BS1 = CAN_BS1_7TQ;
-	hcan1.Init.BS2 = CAN_BS2_4TQ;
+	hcan1.Init.BS1 = CAN_BS1_6TQ;
+	hcan1.Init.BS2 = CAN_BS2_5TQ;
 	hcan1.Init.TTCM = DISABLE;
 	hcan1.Init.ABOM = DISABLE;
 	hcan1.Init.AWUM = DISABLE;
-	hcan1.Init.NART = DISABLE;//ENABLE;
+	hcan1.Init.NART = ENABLE;
 	hcan1.Init.RFLM = DISABLE;
 	hcan1.Init.TXFP = DISABLE;
 
@@ -262,11 +263,8 @@ void MX_CAN1_Init(void)
         
 	HAL_CAN_Init(&hcan1);
 
-
-
-        
         hcan1filter.FilterNumber = 0;        
-        hcan1filter.BankNumber = 0;
+        hcan1filter.BankNumber = 14;
         hcan1filter.FilterMode = CAN_FILTERMODE_IDMASK;
         hcan1filter.FilterScale = CAN_FILTERSCALE_32BIT;
         hcan1filter.FilterIdHigh = 0x0000;
@@ -471,11 +469,11 @@ void assert_failed(uint8_t* file, uint32_t line)
 /* User can add his own implementation to report the file name and line number,
 ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 /* USER CODE END 6 */
-while(1)
-{
-        HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); 
-        HAL_Delay(100);
-}
+        while(1)
+        {
+                HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_14); 
+                HAL_Delay(100);
+        }
 }
 
 #endif
