@@ -52,6 +52,8 @@ CanRxMsgTypeDef canRxMsg;
 CanTxMsgTypeDef canTxMsg;
 
 uint32_t canStatus;
+uint8_t data_,err_cnt;
+
 
 I2C_HandleTypeDef hi2c3;
 
@@ -161,40 +163,45 @@ int main(void)
         HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
 
         printDelay=50;
+        err_cnt =0;
         while (1)
         {
                 HAL_Delay(1);  
-                canStatus = hcan1.State;
+                //canStatus = hcan1.State;
                 switch(--printDelay)
                 {
-                        case 10: 
+                        case 5: 
                         {
                                 sprintf(str6,"%d     ", lastCiclCount); 
                                 lcd_PrintXY(str6,10,0); 
                                 //HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
-                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,1000);
+                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,100);
+                                canStatus  = canRxMsg.Data[0] - data_;
+                                if( canStatus!=1 ) 
+                                        err_cnt++;
+                                data_  = canRxMsg.Data[0];
+                                HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); 
                         } break;
-                        case 20: 
+                        case 10: 
                         {
-
+                                HAL_CAN_Transmit(&hcan1, 10);
                                 sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
                                 lcd_PrintXY(str6,10,1);
                         } break;
-                        case 30: 
+                        case 15: 
                         {
                                 sprintf(str6,"%d     ", umPosition);		
                                 lcd_PrintXY(str6,10,2);
                         } break;
-                        case 40: 
+                        case 20: 
                         {
-                                HAL_CAN_Transmit(&hcan1, 10);
                                 canTxMsg.Data[0]++;
                                 sprintf(str6,"%d     ", fvPosition);    
                                 lcd_PrintXY(str6,10,3);
                         } break;
                         case 0: 
                         {
-                                printDelay=50; 
+                                printDelay=25; 
                         } break;
                 }										
                 }
