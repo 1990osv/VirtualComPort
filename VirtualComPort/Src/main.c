@@ -170,23 +170,24 @@ int main(void)
                 //canStatus = hcan1.State;
                 switch(--printDelay)
                 {
-                        case 5: 
+                        case 1: 
                         {
-                                sprintf(str6,"%d     ", lastCiclCount); 
-                                lcd_PrintXY(str6,10,0); 
+                                //sprintf(str6,"%d     ", lastCiclCount); 
+                                //lcd_PrintXY(str6,10,0); 
+                                canTxMsg.Data[0]++;
+                                HAL_CAN_Transmit(&hcan1, 10);
+                        } break;
+                        case 2: 
+                        {
                                 //HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
-                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,100);
+                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,1000);
                                 canStatus  = canRxMsg.Data[0] - data_;
-                                if( canStatus!=1 ) 
+                                if(( canStatus!=1 ) && (data_ != 255))
                                         err_cnt++;
                                 data_  = canRxMsg.Data[0];
                                 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); 
-                        } break;
-                        case 10: 
-                        {
-                                HAL_CAN_Transmit(&hcan1, 10);
-                                sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
-                                lcd_PrintXY(str6,10,1);
+                                //sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
+                                //lcd_PrintXY(str6,10,1);
                         } break;
                         case 15: 
                         {
@@ -195,13 +196,12 @@ int main(void)
                         } break;
                         case 20: 
                         {
-                                canTxMsg.Data[0]++;
                                 sprintf(str6,"%d     ", fvPosition);    
                                 lcd_PrintXY(str6,10,3);
                         } break;
                         case 0: 
                         {
-                                printDelay=25; 
+                                printDelay=3; 
                         } break;
                 }										
                 }
@@ -254,10 +254,10 @@ void MX_CAN1_Init(void)
 {
 	hcan1.Instance = CAN1;
 	hcan1.Init.Mode = CAN_MODE_LOOPBACK;//CAN_MODE_SILENT_LOOPBACK;//CAN_MODE_NORMAL;
-	hcan1.Init.Prescaler = 2; //2400000/1000000/2 = 12
+	hcan1.Init.Prescaler = 3; //2400000/1000000/3 = 8
 	hcan1.Init.SJW = CAN_SJW_1TQ;
-	hcan1.Init.BS1 = CAN_BS1_6TQ;
-	hcan1.Init.BS2 = CAN_BS2_5TQ;
+	hcan1.Init.BS1 = CAN_BS1_4TQ;
+	hcan1.Init.BS2 = CAN_BS2_3TQ;
 	hcan1.Init.TTCM = DISABLE;
 	hcan1.Init.ABOM = DISABLE;
 	hcan1.Init.AWUM = DISABLE;
