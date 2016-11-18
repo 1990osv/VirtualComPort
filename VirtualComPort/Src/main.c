@@ -151,8 +151,8 @@ int main(void)
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
 
-        canTxMsg.IDE = 0x321;
-        canTxMsg.ExtId = 0x1;
+        canTxMsg.IDE = 0x000;
+        canTxMsg.ExtId = 356874;
         canTxMsg.RTR = CAN_RTR_DATA;
         canTxMsg.IDE = CAN_ID_EXT;//CAN_ID_STD;
         canTxMsg.DLC = 1;
@@ -174,17 +174,17 @@ int main(void)
                         {
                                 sprintf(str6,"%d     ", lastCiclCount); 
                                 lcd_PrintXY(str6,10,0); 
-
-                                canTxMsg.Data[0]++;
-                                //HAL_CAN_Transmit(&hcan1, 10);
+                                HAL_CAN_Transmit(&hcan1, 10);
+                                
                         } break;
                         case 2: 
                         {
                                 HAL_CAN_Receive(&hcan1,CAN_FIFO0,1000);
                                 canStatus  = canRxMsg.Data[0] - data_;
-//                                if(( canStatus!=1 ) && (data_ != 255))
-//                                        err_cnt++;
-//                                data_  = canRxMsg.Data[0];
+                                if(( canStatus!=1 ) && (data_ != 255))
+                                        err_cnt++;
+                                canTxMsg.Data[0]  = canRxMsg.Data[0];
+                                
                                 HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); 
                                 //sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
                                 //lcd_PrintXY(str6,10,1);
@@ -201,7 +201,7 @@ int main(void)
                         } break;
                         case 0: 
                         {
-                                printDelay=3; 
+                                printDelay=100; 
                         } break;
                 }										
                 }
@@ -240,7 +240,7 @@ void SystemClock_Config(void)
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3);
 
 	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/8000);
