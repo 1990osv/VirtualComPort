@@ -38,6 +38,7 @@
 
 #include "protocol.h"
 #include "i2c_lcd.h"
+#include "can.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -51,7 +52,7 @@ CAN_FilterConfTypeDef hcan1filter;
 CanRxMsgTypeDef canRxMsg;
 CanTxMsgTypeDef canTxMsg;
 
-uint32_t canStatus;
+uint8_t canStatus;
 uint8_t data_,err_cnt;
 
 
@@ -59,6 +60,7 @@ I2C_HandleTypeDef hi2c3;
 
 char str5[5];
 char str6[6];
+
 
 /* USER CODE END PV */
 
@@ -84,6 +86,8 @@ void lcd_PrintXY(char *str, unsigned char x, unsigned char y)
         lcd_PrintC(str);        
 }
 
+
+
 uint16_t pinToggleReadSSI ( void )
 {
         uint8_t bit_count;
@@ -94,22 +98,15 @@ uint16_t pinToggleReadSSI ( void )
         
         for (bit_count = 0; bit_count <= 16; bit_count++)
         {
-                // falling edge on clock port
-                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
-                
-                // left-shift the current result
+                GPIOD->BSRR = GPIO_PIN_11; //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);
                 u16result = (u16result << 1);
-                // read the port data
-                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); //u8portdata = SSI_DTA_PORT;
-                // rising edge on clock port, data changes
-                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
-                // evaluate the port data (port set or clear)
+                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); 
+                GPIOD->BSRR = (uint32_t)GPIO_PIN_11 << 16; //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);
                 if ( pinState != GPIO_PIN_RESET)
                 {
-                        // bit is set, set LSB of result
                         u16result = u16result | 0x01;
-                } // if
-        } // for
+                }
+        }
         return u16result;
 }
 
@@ -151,18 +148,21 @@ int main(void)
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
 
-        canTxMsg.IDE = 0x000;
-        canTxMsg.ExtId = 356874;
-        canTxMsg.RTR = CAN_RTR_DATA;
-        canTxMsg.IDE = CAN_ID_EXT;//CAN_ID_STD;
-        canTxMsg.DLC = 1;
-        canTxMsg.Data[0] = 50;
+//        canTxMsg.IDE = 0x000;
+//        canTxMsg.ExtId = 356874;
+//        canTxMsg.RTR = CAN_RTR_DATA;
+//        canTxMsg.IDE = CAN_ID_EXT;//CAN_ID_STD;
+//        canTxMsg.DLC = 1;
+//        canTxMsg.Data[0] = 50;
         
-        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-        HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
-        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
-                                
-        printDelay=50;
+//        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+//        HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+//        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+        
+
+        encryptTxMsg(&canTxMsg,100,10,21,0,0,0);
+
+        printDelay=100;
         err_cnt =0;
         while (1)
         {
@@ -179,9 +179,10 @@ int main(void)
                         } break;
                         case 2: 
                         {
-                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,1000);
+                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,100);
                                 canStatus  = canRxMsg.Data[0] - data_;
-                                if(( canStatus!=1 ) && (data_ != 255))
+                                data_ = canRxMsg.Data[0];
+                                if( canStatus!=1 )
                                         err_cnt++;
                                 canTxMsg.Data[0]  = canRxMsg.Data[0];
                                 
@@ -201,7 +202,7 @@ int main(void)
                         } break;
                         case 0: 
                         {
-                                printDelay=100; 
+                                printDelay=3; 
                         } break;
                 }										
                 }
