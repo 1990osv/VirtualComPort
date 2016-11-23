@@ -75,16 +75,35 @@ void SysTick_Handler(void)
 /**
 * @brief This function handles CAN1 RX0 interrupt.
 */
+
+extern         uint32_t printDelay;
+
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
 
   /* USER CODE END CAN1_RX0_IRQn 0 */
-  HAL_CAN_IRQHandler(&hcan1);
+        HAL_CAN_IRQHandler(&hcan1);
+        HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);    
+        HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);        
+        HAL_CAN_Transmit_IT(&hcan1);
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
 
+
+        HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); 
   /* USER CODE END CAN1_RX0_IRQn 1 */
 }
+
+void CAN1_TX_IRQHandler(void)
+{
+        HAL_CAN_IRQHandler(&hcan1);
+        HAL_NVIC_ClearPendingIRQ(CAN1_TX_IRQn); 
+        HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
+        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
+}
+
 /**
 * @brief This function handles USB On The Go FS global interrupt.
 */

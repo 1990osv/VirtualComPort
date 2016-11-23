@@ -54,7 +54,7 @@ CanTxMsgTypeDef canTxMsg;
 
 uint8_t canStatus;
 uint8_t data_,err_cnt;
-
+uint32_t printDelay;
 
 I2C_HandleTypeDef hi2c3;
 
@@ -115,7 +115,7 @@ uint16_t pinToggleReadSSI ( void )
 
 int main(void)
 {
-        uint32_t printDelay;
+
         /* USER CODE BEGIN 1 */
 
         /* USER CODE END 1 */
@@ -155,54 +155,61 @@ int main(void)
 //        canTxMsg.DLC = 1;
 //        canTxMsg.Data[0] = 50;
         
-//        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-//        HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
-//        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+
+        //HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+        
         
 
         encryptTxMsg(&canTxMsg,100,10,21,0,0,0);
 
         printDelay=100;
         err_cnt =0;
+        
+        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);  
+        HAL_CAN_Transmit_IT(&hcan1);
+
         while (1)
         {
                 HAL_Delay(1);  
                 //canStatus = hcan1.State;
-                switch(--printDelay)
+                switch(printDelay++)
                 {
                         case 1: 
                         {
                                 sprintf(str6,"%d     ", lastCiclCount); 
                                 lcd_PrintXY(str6,10,0); 
-                                HAL_CAN_Transmit(&hcan1, 10);
-                                
-                        } break;
-                        case 2: 
-                        {
-                                HAL_CAN_Receive(&hcan1,CAN_FIFO0,100);
                                 canStatus  = canRxMsg.Data[0] - data_;
                                 data_ = canRxMsg.Data[0];
                                 if( canStatus!=1 )
                                         err_cnt++;
-                                canTxMsg.Data[0]  = canRxMsg.Data[0];
+                                canTxMsg.Data[0]  = canRxMsg.Data[0];                                
+
                                 
-                                HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); 
-                                //sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
-                                //lcd_PrintXY(str6,10,1);
                         } break;
-                        case 15: 
+//                        case 2: 
+//                        {
+
+
+//                                //sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
+//                                //lcd_PrintXY(str6,10,1);
+//                        } break;
+//                        case 15: 
+//                        {
+//                                sprintf(str6,"%d     ", umPosition);		
+//                                lcd_PrintXY(str6,10,2);
+//                        } break;
+//                        case 20: 
+//                        {
+//                                sprintf(str6,"%d     ", fvPosition);    
+//                                lcd_PrintXY(str6,10,3);
+//                        } break;
+                        case 1000: 
                         {
-                                sprintf(str6,"%d     ", umPosition);		
-                                lcd_PrintXY(str6,10,2);
-                        } break;
-                        case 20: 
-                        {
-                                sprintf(str6,"%d     ", fvPosition);    
-                                lcd_PrintXY(str6,10,3);
-                        } break;
+                                printDelay=0;   
+                        } break;                        
                         case 0: 
                         {
-                                printDelay=3; 
+                                //printDelay=3; 
                         } break;
                 }										
                 }
