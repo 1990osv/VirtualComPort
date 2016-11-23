@@ -148,18 +148,6 @@ int main(void)
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
 
-//        canTxMsg.IDE = 0x000;
-//        canTxMsg.ExtId = 356874;
-//        canTxMsg.RTR = CAN_RTR_DATA;
-//        canTxMsg.IDE = CAN_ID_EXT;//CAN_ID_STD;
-//        canTxMsg.DLC = 1;
-//        canTxMsg.Data[0] = 50;
-        
-
-        //HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
-        
-        
-
         encryptTxMsg(&canTxMsg,100,10,21,0,0,0);
 
         printDelay=100;
@@ -183,33 +171,26 @@ int main(void)
                                 if( canStatus!=1 )
                                         err_cnt++;
                                 canTxMsg.Data[0]  = canRxMsg.Data[0];                                
-
-                                
                         } break;
-//                        case 2: 
-//                        {
-
-
-//                                //sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
-//                                //lcd_PrintXY(str6,10,1);
-//                        } break;
-//                        case 15: 
-//                        {
-//                                sprintf(str6,"%d     ", umPosition);		
-//                                lcd_PrintXY(str6,10,2);
-//                        } break;
-//                        case 20: 
-//                        {
-//                                sprintf(str6,"%d     ", fvPosition);    
-//                                lcd_PrintXY(str6,10,3);
-//                        } break;
-                        case 1000: 
+                        case 2: 
                         {
-                                printDelay=0;   
-                        } break;                        
-                        case 0: 
+                                sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
+                                lcd_PrintXY(str6,10,1);
+                        } break;
+                        case 3: 
                         {
-                                //printDelay=3; 
+                                sprintf(str6,"%d     ", umPosition);		
+                                lcd_PrintXY(str6,10,2);
+                        } break;
+                        case 4: 
+                        {
+                                sprintf(str6,"%d     ", fvPosition);    
+                                lcd_PrintXY(str6,10,3);
+                                printDelay=1; 
+                        } break;
+                        default:
+                        {
+                                printDelay=1; 
                         } break;
                 }										
                 }

@@ -77,12 +77,15 @@ void SysTick_Handler(void)
 */
 
 extern         uint32_t printDelay;
-
+uint32_t        time1,time2,gt1,gt2,gt3;
+//HAL_GetTick
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
 
   /* USER CODE END CAN1_RX0_IRQn 0 */
+        gt3=HAL_GetTick();
+        time2 = gt3 - gt2;
         HAL_CAN_IRQHandler(&hcan1);
         HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);    
         HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
@@ -97,6 +100,10 @@ void CAN1_RX0_IRQHandler(void)
 
 void CAN1_TX_IRQHandler(void)
 {
+        
+        gt1=HAL_GetTick();
+        time1 = gt1 - gt2;
+        gt2 = gt1;
         HAL_CAN_IRQHandler(&hcan1);
         HAL_NVIC_ClearPendingIRQ(CAN1_TX_IRQn); 
         HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
