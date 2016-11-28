@@ -31,9 +31,12 @@
 ******************************************************************************
 */
 /* Includes ------------------------------------------------------------------*/
+
+
 #include "stm32f4xx_hal.h"
 #include "usb_device.h"
 #include <stdio.h>
+#include <string.h>
 /* USER CODE BEGIN Includes */
 
 #include "protocol.h"
@@ -79,14 +82,27 @@ static void Error_Handler(void);
 
 /* USER CODE BEGIN 0 */
 
+void itoa(int n, char s[])
+{
+     int i, sign;
+
+     if ((sign = n) < 0)
+         n = -n;        
+     i = 0;
+     do {      
+         s[i++] = n % 10 + '0'; 
+     } while ((n /= 10) > 0);   
+     if (sign < 0)
+         s[i++] = '-';
+     s[i] = '\0';
+     reverse(s);
+}
 
 void lcd_PrintXY(char *str, unsigned char x, unsigned char y)
 {
         lcd_Goto(y,x);
         lcd_PrintC(str);        
 }
-
-
 
 uint16_t pinToggleReadSSI ( void )
 {
@@ -150,46 +166,52 @@ int main(void)
 
         encryptTxMsg(&canTxMsg,100,10,21,0,0,0);
 
-        printDelay=100;
+        printDelay=0;
         err_cnt =0;
         
-        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);  
-        HAL_CAN_Transmit_IT(&hcan1);
 
+        //HAL_CAN_Transmit_IT(&hcan1);
+//        HAL_NVIC_SetPriority(CAN1_TX_IRQn,7,7);
+//        HAL_NVIC_SetPriority(CAN1_RX0_IRQn,7,7);
+//        HAL_NVIC_SetPriority(CAN1_RX1_IRQn,7,7);
         while (1)
         {
                 HAL_Delay(1);  
                 //canStatus = hcan1.State;
                 switch(printDelay++)
                 {
-                        case 1: 
+                        case 2: 
                         {
-                                sprintf(str6,"%d     ", lastCiclCount); 
+                                itoa(lastCiclCount,str6);
                                 lcd_PrintXY(str6,10,0); 
                                 canStatus  = canRxMsg.Data[0] - data_;
                                 data_ = canRxMsg.Data[0];
                                 if( canStatus!=1 )
                                         err_cnt++;
-                                canTxMsg.Data[0]  = canRxMsg.Data[0];                                
-                        } break;
-                        case 2: 
-                        {
-                                sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
-                                lcd_PrintXY(str6,10,1);
-                        } break;
-                        case 3: 
-                        {
-                                sprintf(str6,"%d     ", umPosition);		
-                                lcd_PrintXY(str6,10,2);
+                                canTxMsg.Data[0]  = canRxMsg.Data[0]; 
+//                                HAL_CAN_IRQHandler(&hcan1);
+//                                HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);    
+//                                HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+//                                HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);   
+                                HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);  
+                                
+                                HAL_CAN_Transmit_IT(&hcan1);                                
                         } break;
                         case 4: 
                         {
-                                sprintf(str6,"%d     ", fvPosition);    
-                                lcd_PrintXY(str6,10,3);
-                                printDelay=1; 
+                                //itoa(pinToggleReadSSI(),str6);//sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
+                                //lcd_PrintXY(str6,10,1);
+                                
                         } break;
-                        default:
+                        case 6: 
                         {
+                                //itoa(canTxMsg.Data[0],str6);//sprintf(str6,"%d     ", canRxMsg.Data[0]);//umPosition);		
+                                //lcd_PrintXY(str6,10,2);
+                        } break;
+                        case 8: 
+                        {
+                                //itoa(canRxMsg.Data[0],str6);//sprintf(str6,"%d     ", canRxMsg.Data[0]);//fvPosition);    
+                                //lcd_PrintXY(str6,10,3);
                                 printDelay=1; 
                         } break;
                 }										
@@ -221,7 +243,7 @@ void SystemClock_Config(void)
 	RCC_OscInitStruct.PLL.PLLM = 8;
 	RCC_OscInitStruct.PLL.PLLN = 192;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-	RCC_OscInitStruct.PLL.PLLQ = 2;
+	RCC_OscInitStruct.PLL.PLLQ = 4;
 	HAL_RCC_OscConfig(&RCC_OscInitStruct);
 
 	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK|RCC_CLOCKTYPE_PCLK1

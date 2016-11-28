@@ -89,8 +89,8 @@ void CAN1_RX0_IRQHandler(void)
         HAL_CAN_IRQHandler(&hcan1);
         HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);    
         HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
-        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);        
-        HAL_CAN_Transmit_IT(&hcan1);
+//        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);        
+//        HAL_CAN_Transmit_IT(&hcan1);
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
 
 
@@ -106,9 +106,10 @@ void CAN1_TX_IRQHandler(void)
         gt2 = gt1;
         HAL_CAN_IRQHandler(&hcan1);
         HAL_NVIC_ClearPendingIRQ(CAN1_TX_IRQn); 
-        HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
-        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
         HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
+        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
+
 }
 
 /**
