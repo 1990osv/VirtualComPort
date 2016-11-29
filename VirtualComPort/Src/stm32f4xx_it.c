@@ -79,7 +79,7 @@ void SysTick_Handler(void)
 
 extern         uint32_t printDelay;
 
-extern  uint16_t speed;
+
 
 uint32_t        time1,time2,gt1,gt2,gt3;
 
@@ -122,7 +122,7 @@ void CAN1_TX_IRQHandler(void)
   * @retval None
   */
 
-
+extern  uint16_t speed;
 
 extern CanRxMsgTypeDef canRxMsg;
 extern CanTxMsgTypeDef canTxMsg;

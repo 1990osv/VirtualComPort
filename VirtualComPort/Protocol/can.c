@@ -2,7 +2,7 @@
 #include "can.h"
 
 CRYPT_MSG receiveMsg;
-void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint32_t idSender, uint32_t idRecipient, uint32_t command, 
+void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient, uint8_t command, 
                 uint8_t commandTP, uint16_t address, uint32_t parameter)
 {
         pTxMsg->IDE = 0x000;
@@ -15,10 +15,10 @@ void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint32_t idSender, uint32_t idRecipie
         pTxMsg->Data[0] = commandTP;
         pTxMsg->Data[1] = (uint8_t)((address & 0xFF00) >> 8);
         pTxMsg->Data[2] = (uint8_t)((address & 0x00FF));
-        pTxMsg->Data[3] = (uint8_t)((parameter & 0x000000FF) >> 0);
-        pTxMsg->Data[4] = (uint8_t)((parameter & 0x0000FF00) >> 8);
-        pTxMsg->Data[5] = (uint8_t)((parameter & 0x00FF0000) >> 16);
         pTxMsg->Data[6] = (uint8_t)((parameter & 0xFF000000) >> 24);
+        pTxMsg->Data[5] = (uint8_t)((parameter & 0x00FF0000) >> 16);
+        pTxMsg->Data[4] = (uint8_t)((parameter & 0x0000FF00) >> 8);
+        pTxMsg->Data[3] = (uint8_t)((parameter & 0x000000FF) >> 0);
         pTxMsg->Data[7] = 0;        
 }
 

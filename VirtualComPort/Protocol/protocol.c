@@ -16,6 +16,7 @@
 uint16_t modelDelay;            //не менять тип (задержка в циклах systick)
 uint8_t needRunModel;
 
+extern  uint16_t speed;
 
 uint8_t lastCiclCount;     //номер предыдущего сообщения
 
@@ -72,26 +73,45 @@ void azModel(void)
 {
 uint8_t azVelosity;
 uint16_t azTarget;
+uint32_t maxVelosity;        
         azVelosity = in.msg.speedL & 0x0F;
         if(in.msg.mode & 0x01)
         {
                 azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
-                if(azTarget > azPosition) 
-                        azPosition += azVelosity;
+                if(azTarget > azPosition)
+                {
+                        maxVelosity = azTarget - azPosition;
+                        if(maxVelosity > 127) maxVelosity = 127;
+                        azVelosity = (uint8_t)maxVelosity;
+                        speed = 127 + azVelosity;        
+                        //azPosition += azVelosity;
+                }
                 else if(azTarget < azPosition)
-                        azPosition -= azVelosity;
+                {
+                        maxVelosity = azPosition - azTarget;
+                        if(maxVelosity > 127) maxVelosity = 127;                        
+                        azVelosity = (uint8_t)maxVelosity;
+                        speed = 127 - azVelosity ;
+                        //azPosition -= azVelosity;
+                }
         }
         else
         {
                 if(in.msg.mode & 0x04)
                 {
-                        azPosition += azVelosity;
+                        //azPosition += azVelosity;
+                        speed = 127 + azVelosity * 10;
+                        //if(azVelosity < 10) speed = 0;
                 }
-                if(in.msg.mode & 0x08)
+                else if(in.msg.mode & 0x08)
                 {
-                        azPosition -= azVelosity;
+                        //azPosition -= azVelosity;
+                        speed = 127 - azVelosity * 10;
                 }
+                else 
+                        speed = 127;
         }
+        
         out.msg.azimutL = azPosition & 0xFF;
         out.msg.azimutH = (azPosition >> 8) & 0xFF;
 }

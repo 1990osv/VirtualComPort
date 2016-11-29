@@ -142,6 +142,9 @@ uint16_t pinToggleReadSSI ( void )
                         u16result = u16result | 0x01;
                 }
         }
+        
+        azPosition = u16result;
+        
         return u16result;
 }
 
@@ -193,7 +196,7 @@ int main(void)
 //        HAL_NVIC_SetPriority(CAN1_RX1_IRQn,7,7);
         while (1)
         {
-                speed++;
+//                speed++;
 
                 HAL_Delay(50);  
                 //canStatus = hcan1.State;
