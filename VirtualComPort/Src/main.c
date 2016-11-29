@@ -60,7 +60,7 @@ uint32_t printDelay;
 
 
 char str[20];
-
+uint16_t speed=0;
 
 /* USER CODE END PV */
 
@@ -183,8 +183,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-        encryptTxMsg(&canTxMsg,100,10,21,0,0,0);
-
+        //encryptTxMsg(&canTxMsg,100,10,21,0,0,0);
+        
         printDelay=0;
 
 //        HAL_CAN_Transmit_IT(&hcan1);
@@ -193,33 +193,35 @@ int main(void)
 //        HAL_NVIC_SetPriority(CAN1_RX1_IRQn,7,7);
         while (1)
         {
-                //HAL_Delay(1);  
+                speed++;
+
+                HAL_Delay(50);  
                 //canStatus = hcan1.State;
                 switch(printDelay++)
                 {
-                        case 2: 
+                        case 1: 
                         {
                                 itoa(lastCiclCount,str);
-                                lcd_PrintXY(str,10,0); 
                                 lcd_PrintSpase(5);
+                                lcd_PrintXY(str,10,0); 
+                        } break;
+                        case 2: 
+                        {
+                                itoa(pinToggleReadSSI(),str);
+                                lcd_PrintSpase(5);
+                                lcd_PrintXY(str,10,1);
+                        } break;
+                        case 3: 
+                        {
+                                itoa(canTxMsg.Data[0],str);
+                                lcd_PrintSpase(5);
+                                lcd_PrintXY(str,10,2);
                         } break;
                         case 4: 
                         {
-                                itoa(pinToggleReadSSI(),str);
-                                lcd_PrintXY(str,10,1);
-                                lcd_PrintSpase(5);
-                        } break;
-                        case 6: 
-                        {
-                                itoa(canTxMsg.Data[0],str);
-                                lcd_PrintXY(str,10,2);
-                                lcd_PrintSpase(5);
-                        } break;
-                        case 8: 
-                        {
                                 itoa(canRxMsg.Data[0],str);
-                                lcd_PrintXY(str,10,3);
                                 lcd_PrintSpase(5);
+                                lcd_PrintXY(str,10,3);
                                 printDelay=1; 
                         } break;
                 }										
@@ -342,7 +344,7 @@ static void MX_TIM4_Init(void)
         htim4.Instance = TIM4;
         htim4.Init.Prescaler = 9600;
         htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-        htim4.Init.Period = 20;
+        htim4.Init.Period = 20; //4..5 мс период опроса CAN
         htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
         if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
         {

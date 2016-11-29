@@ -37,6 +37,7 @@
 
 /* USER CODE BEGIN 0 */
 #include "protocol.h"
+#include "can.h"
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -77,6 +78,9 @@ void SysTick_Handler(void)
 */
 
 extern         uint32_t printDelay;
+
+extern  uint16_t speed;
+
 uint32_t        time1,time2,gt1,gt2,gt3;
 
 uint8_t crc, canStatus=0;
@@ -108,6 +112,7 @@ void CAN1_TX_IRQHandler(void)
         HAL_NVIC_ClearPendingIRQ(CAN1_TX_IRQn); 
         HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
         //HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        
         HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
 }
 
@@ -123,12 +128,6 @@ extern CanRxMsgTypeDef canRxMsg;
 extern CanTxMsgTypeDef canTxMsg;
 void TIM4_IRQHandler(void)
 {
-        crc  = canRxMsg.Data[0] - data_;
-        data_ = canRxMsg.Data[0];
-        if( crc!=1 )
-                err_cnt++;
-        canTxMsg.Data[0]  = canRxMsg.Data[0]; 
-  
         if((canStatus==0) || (canStatus>10))
         {
                 //HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
@@ -137,6 +136,10 @@ void TIM4_IRQHandler(void)
                  
         }
         canStatus++;
+ 
+        //encryptTxMsg(&canTxMsg,100,10,13,7,0x0409,speed);
+        encryptTxMsg(&canTxMsg,100,10,21,speed,0,0);
+        //setSpeed(&canTxMsg,100,10,speed++);        
         HAL_TIM_IRQHandler(&htim4);
         HAL_NVIC_ClearPendingIRQ(TIM4_IRQn);         
         HAL_NVIC_EnableIRQ(TIM4_IRQn);
