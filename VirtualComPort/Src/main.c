@@ -61,8 +61,7 @@ uint32_t printDelay;
 
 I2C_HandleTypeDef hi2c3;
 
-char str5[5];
-char str6[6];
+char str[20];
 
 
 /* USER CODE END PV */
@@ -81,21 +80,36 @@ static void Error_Handler(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
+/**
+* @brief Преобразоывает число в строку
+* @param n: число
+* @param s: строка
+* @retval None
+*/
 void itoa(int n, char s[])
 {
-     int i, sign;
+	char c;
+	int i,j, sign;
 
-     if ((sign = n) < 0)
-         n = -n;        
-     i = 0;
-     do {      
-         s[i++] = n % 10 + '0'; 
-     } while ((n /= 10) > 0);   
-     if (sign < 0)
-         s[i++] = '-';
-     s[i] = '\0';
-     reverse(s);
+	if ((sign = n) < 0)
+	n = -n;        
+	i = 0;
+	do {      
+		s[i++] = n % 10 + '0'; 
+	} while ((n /= 10) > 0);   
+	if (sign < 0)
+		s[i++] = '-';
+	s[i] = '\0';
+	
+	j = i - 1;
+	i = 0; 
+	while (i < j) {
+		c = s[i];
+		s[i] = s[j];
+		s[j] = c;
+		i++;
+		j--;
+	}
 }
 
 void lcd_PrintXY(char *str, unsigned char x, unsigned char y)
@@ -176,14 +190,14 @@ int main(void)
 //        HAL_NVIC_SetPriority(CAN1_RX1_IRQn,7,7);
         while (1)
         {
-                HAL_Delay(1);  
+                //HAL_Delay(1);  
                 //canStatus = hcan1.State;
                 switch(printDelay++)
                 {
                         case 2: 
                         {
-                                itoa(lastCiclCount,str6);
-                                lcd_PrintXY(str6,10,0); 
+                                itoa(lastCiclCount,str);
+                                lcd_PrintXY(str,10,0); 
                                 canStatus  = canRxMsg.Data[0] - data_;
                                 data_ = canRxMsg.Data[0];
                                 if( canStatus!=1 )
@@ -199,19 +213,20 @@ int main(void)
                         } break;
                         case 4: 
                         {
-                                //itoa(pinToggleReadSSI(),str6);//sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
-                                //lcd_PrintXY(str6,10,1);
+                                itoa(pinToggleReadSSI(),str);//sprintf(str6,"%d     ", pinToggleReadSSI());//azPosition); 
+                                lcd_PrintXY(str,10,1);
                                 
                         } break;
                         case 6: 
                         {
-                                //itoa(canTxMsg.Data[0],str6);//sprintf(str6,"%d     ", canRxMsg.Data[0]);//umPosition);		
-                                //lcd_PrintXY(str6,10,2);
+                                itoa(canTxMsg.Data[0],str);//sprintf(str6,"%d     ", canRxMsg.Data[0]);//umPosition);		
+                                lcd_PrintXY(str,10,2);
+                                printDelay=1;
                         } break;
                         case 8: 
                         {
-                                //itoa(canRxMsg.Data[0],str6);//sprintf(str6,"%d     ", canRxMsg.Data[0]);//fvPosition);    
-                                //lcd_PrintXY(str6,10,3);
+                                itoa(canRxMsg.Data[0],str);//sprintf(str6,"%d     ", canRxMsg.Data[0]);//fvPosition);    
+                                lcd_PrintXY(str,10,3);
                                 printDelay=1; 
                         } break;
                 }										
