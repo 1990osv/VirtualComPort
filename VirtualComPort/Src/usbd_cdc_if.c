@@ -32,6 +32,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
+/* USER CODE BEGIN INCLUDE */
+/* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
@@ -45,8 +47,9 @@
 /** @defgroup USBD_CDC_Private_TypesDefinitions
   * @{
   */ 
-  /* USER CODE BEGIN 0 */ 
-  /* USER CODE END 0 */ 
+/* USER CODE BEGIN PRIVATE_TYPES */
+USBD_HandleTypeDef  *hUsbDevice_0;
+/* USER CODE END PRIVATE_TYPES */ 
 /**
   * @}
   */ 
@@ -54,12 +57,12 @@
 /** @defgroup USBD_CDC_Private_Defines
   * @{
   */ 
-  /* USER CODE BEGIN 1 */
+/* USER CODE BEGIN PRIVATE_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
 #define APP_RX_DATA_SIZE  9
 #define APP_TX_DATA_SIZE  11
-  /* USER CODE END 1 */  
+/* USER CODE END PRIVATE_DEFINES */
 /**
   * @}
   */ 
@@ -67,8 +70,9 @@
 /** @defgroup USBD_CDC_Private_Macros
   * @{
   */ 
-  /* USER CODE BEGIN 2 */ 
-  /* USER CODE END 2 */
+/* USER CODE BEGIN PRIVATE_MACRO */
+/* USER CODE END PRIVATE_MACRO */
+
 /**
   * @}
   */ 
@@ -84,11 +88,19 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 /* Send Data over USB CDC are stored in this buffer       */
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
-/* USB handler declaration */
-/* Handle for USB Full Speed IP */
-USBD_HandleTypeDef  *hUsbDevice_0;
+/* USER CODE BEGIN PRIVATE_VARIABLES */
+/* USER CODE END PRIVATE_VARIABLES */
 
-extern USBD_HandleTypeDef hUsbDeviceFS;
+/**
+  * @}
+  */ 
+  
+/** @defgroup USBD_CDC_IF_Exported_Variables
+  * @{
+  */ 
+  extern USBD_HandleTypeDef hUsbDeviceFS;
+/* USER CODE BEGIN EXPORTED_VARIABLES */
+/* USER CODE END EXPORTED_VARIABLES */
 
 /**
   * @}
@@ -100,8 +112,15 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 static int8_t CDC_Init_FS     (void);
 static int8_t CDC_DeInit_FS   (void);
 static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
+//static int8_t CDC_Receive_FS  (uint8_t* pbuf, uint32_t *Len);
 
+/* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
+/* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
+/**
+  * @}
+  */ 
+  
 USBD_CDC_ItfTypeDef USBD_Interface_fops_FS = 
 {
   CDC_Init_FS,
@@ -118,9 +137,9 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
 static int8_t CDC_Init_FS(void)
-{
-  hUsbDevice_0 = &hUsbDeviceFS;
+{ 
   /* USER CODE BEGIN 3 */ 
+  hUsbDevice_0 = &hUsbDeviceFS;        
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(hUsbDevice_0, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(hUsbDevice_0, UserRxBufferFS);
@@ -263,9 +282,8 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   return result;
 }
 
-/**
-  * @}
-  */ 
+/* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+/* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
   * @}

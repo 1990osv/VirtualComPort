@@ -42,6 +42,7 @@
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern CAN_HandleTypeDef hcan1;
+extern TIM_HandleTypeDef    htim4;
 /******************************************************************************/
 /*            Cortex-M4 Processor Interruption and Exception Handlers         */ 
 /******************************************************************************/
@@ -62,8 +63,7 @@ void SysTick_Handler(void)
 	transfer();
 	if(needRunModel) 
 		model();
-	/* USER CODE END SysTick_IRQn 1 */
-	
+  /* USER CODE END SysTick_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -78,38 +78,69 @@ void SysTick_Handler(void)
 
 extern         uint32_t printDelay;
 uint32_t        time1,time2,gt1,gt2,gt3;
+
+uint8_t crc, canStatus=0;
+uint8_t data_,err_cnt=0;
+
 //HAL_GetTick
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
-
-  /* USER CODE END CAN1_RX0_IRQn 0 */
+        canStatus=0;        
         gt3=HAL_GetTick();
         time2 = gt3 - gt2;
         HAL_CAN_IRQHandler(&hcan1);
         HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);    
-        HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
-//        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);        
-//        HAL_CAN_Transmit_IT(&hcan1);
+        //HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+  /* USER CODE END CAN1_RX0_IRQn 0 */
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
-
-
         HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); 
+
   /* USER CODE END CAN1_RX0_IRQn 1 */
 }
 
 void CAN1_TX_IRQHandler(void)
 {
-        
         gt1=HAL_GetTick();
         time1 = gt1 - gt2;
         gt2 = gt1;
         HAL_CAN_IRQHandler(&hcan1);
         HAL_NVIC_ClearPendingIRQ(CAN1_TX_IRQn); 
         HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
-        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        //HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
         HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
+}
 
+/**
+  * @brief  This function handles TIM interrupt request.
+  * @param  None
+  * @retval None
+  */
+
+
+
+extern CanRxMsgTypeDef canRxMsg;
+extern CanTxMsgTypeDef canTxMsg;
+void TIM4_IRQHandler(void)
+{
+        crc  = canRxMsg.Data[0] - data_;
+        data_ = canRxMsg.Data[0];
+        if( crc!=1 )
+                err_cnt++;
+        canTxMsg.Data[0]  = canRxMsg.Data[0]; 
+  
+        if((canStatus==0) || (canStatus>10))
+        {
+                //HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+                HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+                HAL_CAN_Transmit_IT(&hcan1);   
+                 
+        }
+        canStatus++;
+        HAL_TIM_IRQHandler(&htim4);
+        HAL_NVIC_ClearPendingIRQ(TIM4_IRQn);         
+        HAL_NVIC_EnableIRQ(TIM4_IRQn);
+        HAL_GPIO_TogglePin(GPIOD,LD4_Pin);         
 }
 
 /**
