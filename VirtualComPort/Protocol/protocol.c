@@ -79,7 +79,6 @@ void azModel(void)
 
 int16_t azTarget;
 int16_t maxVelosity;        
-        azVelosity = in.msg.speedL & 0x0F;
         if(in.msg.mode & 0x01)
         {
                 azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
@@ -88,24 +87,7 @@ int16_t maxVelosity;
                 maxVelosity /= 20;
                 if(maxVelosity > 100) maxVelosity = 100;
                 if(maxVelosity < -100) maxVelosity = -100; 
-                azVelosity = (uint8_t)maxVelosity;
-                speed = 127 + azVelosity;
-//                if(azTarget > azPosition)
-//                {
-//                        maxVelosity = azTarget - azPosition;
-//                        if(maxVelosity > 127) maxVelosity = 127;
-//                        azVelosity = (uint8_t)maxVelosity;
-//                        speed = 127 + azVelosity;        
-//                        //azPosition += azVelosity;
-//                }
-//                else if(azTarget < azPosition)
-//                {
-//                        maxVelosity = azPosition - azTarget;
-//                        if(maxVelosity > 127) maxVelosity = 127;                        
-//                        azVelosity = (uint8_t)maxVelosity;
-//                        speed = 127 - azVelosity ;
-//                        //azPosition -= azVelosity;
-//                }
+                azVelosity = 127 + (uint8_t)maxVelosity;
         }
         else
         {
@@ -114,16 +96,16 @@ int16_t maxVelosity;
                 if(in.msg.mode & 0x04)
                 {
                         //azPosition += azVelosity;
-                        speed = 127 + azVelosity * 10;
+                        azVelosity = 127 + (in.msg.speedL & 0x0F) * 10;
                         //if(azVelosity < 10) speed = 0;
                 }
                 else if(in.msg.mode & 0x08)
                 {
                         //azPosition -= azVelosity;
-                        speed = 127 - azVelosity * 10;
+                        azVelosity = 127 - (in.msg.speedL & 0x0F) * 10;
                 }
                 else 
-                        speed = 127;
+                        azVelosity = 127;
         }
         
         out.msg.azimutL = azPosition & 0xFF;

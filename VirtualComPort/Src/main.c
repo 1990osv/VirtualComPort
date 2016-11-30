@@ -56,11 +56,7 @@ CanRxMsgTypeDef canRxMsg;
 CanTxMsgTypeDef canTxMsg;
 
 
-uint32_t printDelay;
-
-
 char str[20];
-uint16_t speed=0;
 
 /* USER CODE END PV */
 
@@ -88,7 +84,8 @@ void itoa(int n, char s[])
 {
 	char c;
 	int i,j, sign;
-
+        for(i=0;i<5;i++)
+        s[i]=' ';
 	if ((sign = n) < 0)
 	n = -n;        
 	i = 0;
@@ -97,7 +94,7 @@ void itoa(int n, char s[])
 	} while ((n /= 10) > 0);   
 	if (sign < 0)
 		s[i++] = '-';
-	s[i] = '\0';
+	s[5] = '\0';
 	
 	j = i - 1;
 	i = 0; 
@@ -122,6 +119,8 @@ void lcd_PrintSpase(unsigned char n)
         lcd_Data(' ');
         
 }
+
+
 
 //uint16_t pinToggleReadSSI ( void )
 //{
@@ -186,84 +185,53 @@ uint16_t pinToggleReadSSI ( void )
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
+        /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+        /* USER CODE END 1 */
 
-  /* MCU Configuration----------------------------------------------------------*/
+        /* MCU Configuration----------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+        /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+        HAL_Init();
 
-  /* Configure the system clock */
-  SystemClock_Config();
+        /* Configure the system clock */
+        SystemClock_Config();
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_CAN1_Init();
-  MX_I2C3_Init();
-  MX_USB_DEVICE_Init();
-  MX_TIM4_Init();
+        /* Initialize all configured peripherals */
+        MX_GPIO_Init();
+        MX_CAN1_Init();
+        MX_I2C3_Init();
+        MX_USB_DEVICE_Init();
+        MX_TIM4_Init();
 
-  /* USER CODE BEGIN 2 */
-        HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13);
-
+        /* USER CODE BEGIN 2 */
         lcd_initialisation();
-				lcd_PrintXY("count  = ",0,0); 
-				lcd_PrintXY("azimut = ",0,1);
-				lcd_PrintXY("angle  = ",0,2);
-				lcd_PrintXY("phase  = ",0,3);
-  /* USER CODE END 2 */
+        lcd_PrintXY("count  = ",0,0); 
+        lcd_PrintXY("azimut = ",0,1);
+        lcd_PrintXY("angle  = ",0,2);
+        lcd_PrintXY("phase  = ",0,3);
+        /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-
-        //encryptTxMsg(&canTxMsg,100,10,21,0,0,0);
-        
-        printDelay=0;
-
-//        HAL_CAN_Transmit_IT(&hcan1);
-//        HAL_NVIC_SetPriority(CAN1_TX_IRQn,7,7);
-//        HAL_NVIC_SetPriority(CAN1_RX0_IRQn,7,7);
-//        HAL_NVIC_SetPriority(CAN1_RX1_IRQn,7,7);
+        /* Infinite loop */
+        /* USER CODE BEGIN WHILE */
         while (1)
         {
-//                speed++;
                 pinToggleReadSSI();
-                //HAL_Delay(50);  
-                //canStatus = hcan1.State;
-//                switch(printDelay++)
-//                {
-//                        case 1: 
-//                        {
-                                itoa(lastCiclCount,str);
-                                lcd_PrintSpase(5);
-                                lcd_PrintXY(str,10,0); 
-//                        } break;
-//                        case 2: 
-//                        {
-                                itoa(azPosition,str);
-                                lcd_PrintSpase(5);
-                                lcd_PrintXY(str,10,1);
-//                        } break;
-//                        case 3: 
-//                        {
-                                itoa(azPosition*360/0xFFFF,str);
-                                lcd_PrintSpase(3);
-                                lcd_PrintXY(str,10,2);
-//                                itoa(canTxMsg.Data[0],str);
-//                                lcd_PrintSpase(5);
-//                                lcd_PrintXY(str,10,2);
-//                        } break;
-//                        case 4: 
-//                        {
-                                itoa(canTxMsg.Data[0],str);
-                                lcd_PrintSpase(5);
-                                lcd_PrintXY(str,10,3);
-                                printDelay=1; 
-                                
-//                        } break;
-//                }										
+                itoa(lastCiclCount,str);
+                //lcd_PrintSpase(5);
+                lcd_PrintXY(str,10,0); 
+
+                itoa(azPosition,str);
+                //lcd_PrintSpase(5);
+                lcd_PrintXY(str,10,1);
+
+                itoa(azPosition*360/0xFFFF,str);
+                //lcd_PrintSpase(3);
+                lcd_PrintXY(str,10,2);
+
+                itoa(canTxMsg.Data[0],str);
+                //lcd_PrintSpase(5);
+                lcd_PrintXY(str,10,3);
         }
         
   /* USER CODE END WHILE */
@@ -360,7 +328,7 @@ static void MX_I2C3_Init(void)
 {
 
   hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 100000;
+  hi2c3.Init.ClockSpeed = 200000;
   hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;

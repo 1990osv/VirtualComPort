@@ -122,7 +122,6 @@ void CAN1_TX_IRQHandler(void)
   * @retval None
   */
 
-extern  uint16_t speed;
 
 extern CanRxMsgTypeDef canRxMsg;
 extern CanTxMsgTypeDef canTxMsg;
@@ -138,7 +137,7 @@ void TIM4_IRQHandler(void)
         canStatus++;
  
         //encryptTxMsg(&canTxMsg,100,10,13,7,0x0409,speed);
-        encryptTxMsg(&canTxMsg,100,10,21,speed,0,0);
+        encryptTxMsg(&canTxMsg,100,10,21,azVelosity,0,0);
         //setSpeed(&canTxMsg,100,10,speed++);        
         HAL_TIM_IRQHandler(&htim4);
         HAL_NVIC_ClearPendingIRQ(TIM4_IRQn);         
