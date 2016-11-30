@@ -24,6 +24,11 @@ uint16_t azPosition;
 uint16_t umPosition;
 uint16_t fvPosition;
 
+
+int8_t azVelosity;
+int8_t umVelosity;
+int8_t fvVelosity;
+
 struct StructInMsg{
         unsigned char ciclCount;
         unsigned char mode;
@@ -71,32 +76,41 @@ static unsigned char crcOutCompute(unsigned char *data, unsigned char len);
 
 void azModel(void)
 {
-uint8_t azVelosity;
-uint16_t azTarget;
-uint32_t maxVelosity;        
+
+int16_t azTarget;
+int16_t maxVelosity;        
         azVelosity = in.msg.speedL & 0x0F;
         if(in.msg.mode & 0x01)
         {
                 azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
-                if(azTarget > azPosition)
-                {
-                        maxVelosity = azTarget - azPosition;
-                        if(maxVelosity > 127) maxVelosity = 127;
-                        azVelosity = (uint8_t)maxVelosity;
-                        speed = 127 + azVelosity;        
-                        //azPosition += azVelosity;
-                }
-                else if(azTarget < azPosition)
-                {
-                        maxVelosity = azPosition - azTarget;
-                        if(maxVelosity > 127) maxVelosity = 127;                        
-                        azVelosity = (uint8_t)maxVelosity;
-                        speed = 127 - azVelosity ;
-                        //azPosition -= azVelosity;
-                }
+                
+                maxVelosity = azTarget - azPosition;
+                maxVelosity /= 20;
+                if(maxVelosity > 100) maxVelosity = 100;
+                if(maxVelosity < -100) maxVelosity = -100; 
+                azVelosity = (uint8_t)maxVelosity;
+                speed = 127 + azVelosity;
+//                if(azTarget > azPosition)
+//                {
+//                        maxVelosity = azTarget - azPosition;
+//                        if(maxVelosity > 127) maxVelosity = 127;
+//                        azVelosity = (uint8_t)maxVelosity;
+//                        speed = 127 + azVelosity;        
+//                        //azPosition += azVelosity;
+//                }
+//                else if(azTarget < azPosition)
+//                {
+//                        maxVelosity = azPosition - azTarget;
+//                        if(maxVelosity > 127) maxVelosity = 127;                        
+//                        azVelosity = (uint8_t)maxVelosity;
+//                        speed = 127 - azVelosity ;
+//                        //azPosition -= azVelosity;
+//                }
         }
         else
         {
+                //скорость по интерфейсу приходит как значение [1..10]
+                //speed = 127 => скорость СПШ = 0 
                 if(in.msg.mode & 0x04)
                 {
                         //azPosition += azVelosity;

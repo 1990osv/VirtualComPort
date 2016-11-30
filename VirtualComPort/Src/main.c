@@ -123,6 +123,31 @@ void lcd_PrintSpase(unsigned char n)
         
 }
 
+//uint16_t pinToggleReadSSI ( void )
+//{
+//        uint8_t bit_count;
+//        uint16_t u16result = 0;
+//        GPIO_PinState pinState;
+//        
+//        u16result = 0;
+//        
+//        for (bit_count = 0; bit_count <= 16; bit_count++)
+//        {
+//                GPIOD->BSRR = GPIO_PIN_11; //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);
+//                u16result = (u16result << 1);
+//                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); 
+//                GPIOD->BSRR = (uint32_t)GPIO_PIN_11 << 16; //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);
+//                if ( pinState != GPIO_PIN_RESET)
+//                {
+//                        u16result = u16result | 0x01;
+//                }
+//        }
+//        
+//        azPosition = u16result;
+//        
+//        return u16result;
+//}
+
 uint16_t pinToggleReadSSI ( void )
 {
         uint8_t bit_count;
@@ -133,15 +158,22 @@ uint16_t pinToggleReadSSI ( void )
         
         for (bit_count = 0; bit_count <= 16; bit_count++)
         {
-                GPIOD->BSRR = GPIO_PIN_11; //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);
+                // falling edge on clock port
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
+                
+                // left-shift the current result
                 u16result = (u16result << 1);
-                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); 
-                GPIOD->BSRR = (uint32_t)GPIO_PIN_11 << 16; //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);
+                // read the port data
+                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); //u8portdata = SSI_DTA_PORT;
+                // rising edge on clock port, data changes
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
+                // evaluate the port data (port set or clear)
                 if ( pinState != GPIO_PIN_RESET)
                 {
+                        // bit is set, set LSB of result
                         u16result = u16result | 0x01;
-                }
-        }
+                } // if
+        } // for
         
         azPosition = u16result;
         
@@ -197,38 +229,42 @@ int main(void)
         while (1)
         {
 //                speed++;
-
-                HAL_Delay(50);  
+                pinToggleReadSSI();
+                //HAL_Delay(50);  
                 //canStatus = hcan1.State;
-                switch(printDelay++)
-                {
-                        case 1: 
-                        {
+//                switch(printDelay++)
+//                {
+//                        case 1: 
+//                        {
                                 itoa(lastCiclCount,str);
                                 lcd_PrintSpase(5);
                                 lcd_PrintXY(str,10,0); 
-                        } break;
-                        case 2: 
-                        {
-                                itoa(pinToggleReadSSI(),str);
+//                        } break;
+//                        case 2: 
+//                        {
+                                itoa(azPosition,str);
                                 lcd_PrintSpase(5);
                                 lcd_PrintXY(str,10,1);
-                        } break;
-                        case 3: 
-                        {
-                                itoa(canTxMsg.Data[0],str);
-                                lcd_PrintSpase(5);
+//                        } break;
+//                        case 3: 
+//                        {
+                                itoa(azPosition*360/0xFFFF,str);
+                                lcd_PrintSpase(3);
                                 lcd_PrintXY(str,10,2);
-                        } break;
-                        case 4: 
-                        {
-                                itoa(canRxMsg.Data[0],str);
+//                                itoa(canTxMsg.Data[0],str);
+//                                lcd_PrintSpase(5);
+//                                lcd_PrintXY(str,10,2);
+//                        } break;
+//                        case 4: 
+//                        {
+                                itoa(canTxMsg.Data[0],str);
                                 lcd_PrintSpase(5);
                                 lcd_PrintXY(str,10,3);
                                 printDelay=1; 
-                        } break;
-                }										
-                }
+                                
+//                        } break;
+//                }										
+        }
         
   /* USER CODE END WHILE */
 

@@ -17,4 +17,9 @@ extern uint16_t umPosition;
 extern uint16_t fvPosition;
 
 
+extern int8_t azVelosity;
+extern int8_t umVelosity;
+extern int8_t fvVelosity;
+
+
 #endif
