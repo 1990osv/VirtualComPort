@@ -147,7 +147,7 @@ void lcd_PrintSpase(unsigned char n)
 //        return u16result;
 //}
 
-uint16_t pinToggleReadSSI ( void )
+uint16_t AZpinToggleReadSSI ( void )
 {
         uint8_t bit_count;
         uint16_t u16result = 0;
@@ -175,6 +175,70 @@ uint16_t pinToggleReadSSI ( void )
         } // for
         
         azPosition = u16result;
+        
+        return u16result;
+}
+
+uint16_t UMpinToggleReadSSI ( void )
+{
+        uint8_t bit_count;
+        uint16_t u16result = 0;
+        GPIO_PinState pinState;
+        
+        u16result = 0;
+        
+        for (bit_count = 0; bit_count <= 16; bit_count++)
+        {
+                // falling edge on clock port
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
+                
+                // left-shift the current result
+                u16result = (u16result << 1);
+                // read the port data
+                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); //u8portdata = SSI_DTA_PORT;
+                // rising edge on clock port, data changes
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
+                // evaluate the port data (port set or clear)
+                if ( pinState != GPIO_PIN_RESET)
+                {
+                        // bit is set, set LSB of result
+                        u16result = u16result | 0x01;
+                } // if
+        } // for
+        
+        umPosition = u16result;
+        
+        return u16result;
+}
+
+uint16_t FVpinToggleReadSSI ( void )
+{
+        uint8_t bit_count;
+        uint16_t u16result = 0;
+        GPIO_PinState pinState;
+        
+        u16result = 0;
+        
+        for (bit_count = 0; bit_count <= 16; bit_count++)
+        {
+                // falling edge on clock port
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,0);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
+                
+                // left-shift the current result
+                u16result = (u16result << 1);
+                // read the port data
+                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); //u8portdata = SSI_DTA_PORT;
+                // rising edge on clock port, data changes
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,1);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
+                // evaluate the port data (port set or clear)
+                if ( pinState != GPIO_PIN_RESET)
+                {
+                        // bit is set, set LSB of result
+                        u16result = u16result | 0x01;
+                } // if
+        } // for
+        
+        fvPosition = u16result;
         
         return u16result;
 }
@@ -216,20 +280,23 @@ int main(void)
         /* USER CODE BEGIN WHILE */
         while (1)
         {
-                pinToggleReadSSI();
+                AZpinToggleReadSSI();
+                UMpinToggleReadSSI();
+                FVpinToggleReadSSI();
+                
                 itoa(lastCiclCount,str);
                 //lcd_PrintSpase(5);
                 lcd_PrintXY(str,10,0); 
 
-                itoa(azPosition,str);
+                itoa(azPosition*360/0xFFFF,str);
                 //lcd_PrintSpase(5);
                 lcd_PrintXY(str,10,1);
 
-                itoa(azPosition*360/0xFFFF,str);
+                itoa(umPosition*360/0xFFFF,str);
                 //lcd_PrintSpase(3);
                 lcd_PrintXY(str,10,2);
 
-                itoa(canTxMsg.Data[0],str);
+                itoa(fvPosition*360/0xFFFF,str);
                 //lcd_PrintSpase(5);
                 lcd_PrintXY(str,10,3);
         }
@@ -247,43 +314,43 @@ int main(void)
 void SystemClock_Config(void)
 {
 
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+        RCC_OscInitTypeDef RCC_OscInitStruct;
+        RCC_ClkInitTypeDef RCC_ClkInitStruct;
 
-  __HAL_RCC_PWR_CLK_ENABLE();
+        __HAL_RCC_PWR_CLK_ENABLE();
 
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+        __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 192;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+        RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+        RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+        RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+        RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+        RCC_OscInitStruct.PLL.PLLM = 8;
+        RCC_OscInitStruct.PLL.PLLN = 192;
+        RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+        RCC_OscInitStruct.PLL.PLLQ = 4;
+        if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+        {
+                Error_Handler();
+        }
 
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
-  {
-    Error_Handler();
-  }
+        RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                                     |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+        RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+        RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+        RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+        RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+        if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
+        {
+                Error_Handler();
+        }
 
-  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/8000);
+        HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/8000);
 
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK_DIV8);
+        HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK_DIV8);
 
-  /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+        /* SysTick_IRQn interrupt configuration */
+        HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
 /* CAN1 init function */

@@ -76,13 +76,11 @@ static unsigned char crcOutCompute(unsigned char *data, unsigned char len);
 
 void azModel(void)
 {
-
 int16_t azTarget;
 int16_t maxVelosity;        
         if(in.msg.mode & 0x01)
         {
                 azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
-                
                 maxVelosity = azTarget - azPosition;
                 maxVelosity /= 20;
                 if(maxVelosity > 100) maxVelosity = 100;
@@ -115,27 +113,30 @@ int16_t maxVelosity;
 
 void umModel(void)
 {
-uint8_t umVelosity;
-uint16_t umTarget;
-        umVelosity = in.msg.speedL >> 4;
+int16_t umTarget;
+int16_t maxVelosity;  
+        
         if(in.msg.mode & 0x02)
         {
                 umTarget =  in.msg.angleL | (in.msg.angleH << 8);
-                if(umTarget > umPosition) 
-                        umPosition += umVelosity;
-                else if(umTarget < umPosition)
-                        umPosition -= umVelosity;
+                maxVelosity = umTarget - umPosition;
+                maxVelosity /= 20;
+                if(maxVelosity > 100) maxVelosity = 100;
+                if(maxVelosity < -100) maxVelosity = -100; 
+                umVelosity = 127 + (uint8_t)maxVelosity;
         }
         else
         {
                 if(in.msg.mode & 0x10)
                 {
-                        umPosition -= umVelosity;
+                        umVelosity = 127 + (in.msg.speedL >> 4) * 10;
                 }
-                if(in.msg.mode & 0x20)
+                else if(in.msg.mode & 0x20)
                 {
-                        umPosition += umVelosity;
+                        umVelosity = 127 - (in.msg.speedL >> 4) * 10;
                 }
+                else
+                        umVelosity = 127;
         }
         out.msg.angleL = umPosition & 0xFF;
         out.msg.angleH = (umPosition >> 8) & 0xFF;
@@ -143,16 +144,16 @@ uint16_t umTarget;
 
 void fvModel(void)
 {
-uint8_t fvVelosity;
-        fvVelosity = in.msg.speedH & 0x0F;
         if(in.msg.mode & 0x40)
         {
-                fvPosition -= fvVelosity;
+                fvVelosity = 127 + (in.msg.speedH & 0x0F) * 10;
         }
-        if(in.msg.mode & 0x80)
+        else if(in.msg.mode & 0x80)
         {
-                fvPosition += fvVelosity;
+                fvVelosity = 127 - (in.msg.speedH & 0x0F) * 10;
         }
+        else
+                fvVelosity = 127;
         out.msg.phazeL = fvPosition & 0xFF;
         out.msg.phazeH = (fvPosition >> 8) & 0xFF;
 }
@@ -164,7 +165,6 @@ void tickModel(void)
                 modelDelay=0;
                 needRunModel = 1;               
         }
-
 }
 
 void model(void)
