@@ -24,7 +24,6 @@ uint16_t azPosition;
 uint16_t umPosition;
 uint16_t fvPosition;
 
-
 int8_t azVelosity;
 int8_t umVelosity;
 int8_t fvVelosity;
