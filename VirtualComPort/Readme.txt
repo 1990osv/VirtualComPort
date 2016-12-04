@@ -10,31 +10,36 @@ my CAN address  100
 
 Программа СПШ:
 
+W>0 P_IN.0=0 =
 
-EVENT 0 + START
-GET(100,21,X)
-W=X-127
-Z=dd11
-IF(Z>0)
-  SEND(100,21,Y)
+IF(Y=0)
+  up0=0
 ENDIF
+Y=Y+1
+IF(Y=10000)
+  Y=up0 + 1
+  up0= Y
+  SEND(5,21,Y)
+  Y=1
+ENDIF
+IF(CAN_RECV(5,21,X))
+  Z=127
+  up1=Z-X
+  Z=up1*7
+  X=0
+  up2=X-Z
+ENDIF
+  IF(up2>0)
+    IF(P_IN.0=0)
+      up2=0
+    ENDIF
+  ENDIF
+  IF(up2<0)
+    IF(P_IN.1=0)
+      up2=0
+    ENDIF
+  ENDIF
+  W=up2
 REPEAT
-ON_EVENT 0
-W=0
-X=127
-Z=0
-Y=0
 
-
-
-
-EVENT 0 + START
-EVENT 1 + CAN_RECV(2,21,Y)
-Y=Y
-REPEAT
-ON_EVENT 0
-W=0
-ON_EVENT 1
-W=X-127
-EVENT 1 +
 

@@ -35,7 +35,7 @@
 #include "usb_device.h"
 
 /* USER CODE BEGIN Includes */
-#include "math.h"  // for trunc function
+#include "SSI_Sensor.h"
 #include "protocol.h"
 #include "i2c_lcd.h"
 #include "can.h"
@@ -58,17 +58,7 @@ CanTxMsgTypeDef canTxMsg;
 
 char str[20];
 
-double azG, azM, azS;
-double azG_, azM_, azS_;
-uint32_t azG_i, azM_i, azS_i;
 
-double umG, umM, umS;
-double umG_, umM_, umS_;
-uint32_t umG_i, umM_i, umS_i;
-
-double fvG, fvM, fvS;
-double fvG_, fvM_, fvS_;
-uint32_t fvG_i, fvM_i, fvS_i;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,124 +84,11 @@ void lcd_PrintSpase(unsigned char n)
 {
         while(n--)
         lcd_Data(' ');
-        
 }
-
-uint16_t AZpinToggleReadSSI ( void )
-{
-        uint8_t bit_count;
-        uint16_t u16result = 0;
-        GPIO_PinState pinState;
-        
-        u16result = 0;
-        
-        for (bit_count = 0; bit_count <= 16; bit_count++)
-        {
-                // falling edge on clock port
-                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,GPIO_PIN_RESET);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
-                
-                // left-shift the current result
-                u16result = (u16result << 1);
-                // read the port data
-                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10); //u8portdata = SSI_DTA_PORT;
-                // rising edge on clock port, data changes
-                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11,GPIO_PIN_SET);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
-                // evaluate the port data (port set or clear)
-                if ( pinState != GPIO_PIN_RESET)
-                {
-                        // bit is set, set LSB of result
-                        u16result = u16result | 0x01;
-                } // if
-        } // for
-        
-        azPosition = u16result;
-        
-        azG = (double)azPosition * 360.0 / 65535.0;
-        azG_ = trunc(azG);
-        azG_i = (uint32_t)azG_;
-        
-        azM = (azG - azG_) * 60.0;
-        azM_ = trunc(azM);
-        azM_i = (uint32_t)azM_;
-        
-        azS = (azM - azM_) * 60.0;
-        azS_ = trunc(azS);        
-        azS_i = (uint32_t)azS_;
-
-        return u16result;
-}
-
-uint16_t UMpinToggleReadSSI ( void )
-{
-        uint8_t bit_count;
-        uint16_t u16result = 0;
-        GPIO_PinState pinState;
-        
-        u16result = 0;
-        
-        for (bit_count = 0; bit_count <= 16; bit_count++)
-        {
-                // falling edge on clock port
-                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_9,GPIO_PIN_RESET);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
-                
-                // left-shift the current result
-                u16result = (u16result << 1);
-                // read the port data
-                pinState = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_8); //u8portdata = SSI_DTA_PORT;
-                // rising edge on clock port, data changes
-                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_9,GPIO_PIN_SET);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
-                // evaluate the port data (port set or clear)
-                if ( pinState != GPIO_PIN_RESET)
-                {
-                        // bit is set, set LSB of result
-                        u16result = u16result | 0x01;
-                } // if
-        } // for
-        
-        umPosition = u16result;
-        
-        return u16result;
-}
-
-uint16_t FVpinToggleReadSSI ( void )
-{
-        uint8_t bit_count;
-        uint16_t u14result = 0;
-        GPIO_PinState pinState;
-        
-        u14result = 0;
-        
-        for (bit_count = 0; bit_count <= 14; bit_count++)
-        {
-                // falling edge on clock port
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15,GPIO_PIN_RESET);//SSI_CLK_PORT &= ~(1 << SSI_CLK_BIT);
-                
-                // left-shift the current result
-                u14result = (u14result << 1);
-                // read the port data
-                pinState = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14); //u8portdata = SSI_DTA_PORT;
-                // rising edge on clock port, data changes
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15,GPIO_PIN_SET);//SSI_CLK_PORT |= (1 << SSI_CLK_BIT);
-                // evaluate the port data (port set or clear)
-                if ( pinState != GPIO_PIN_RESET)
-                {
-                        // bit is set, set LSB of result
-                        u14result = u14result | 0x01;
-                } // if
-        } // for
-        
-        fvPosition = u14result;
-        
-        
-        return u14result;
-}
-
 
 /* USER CODE END 0 */
-
 int main(void)
 {
-
         /* USER CODE BEGIN 1 */
 
         /* USER CODE END 1 */
@@ -240,20 +117,16 @@ int main(void)
         /* USER CODE BEGIN WHILE */
         while (1)
         {
-                AZpinToggleReadSSI();
-                UMpinToggleReadSSI();
-                FVpinToggleReadSSI();
-                
-                sprintf(str,"CICL CNT %d", lastCiclCount);
+                sprintf(str,"CICL CNT %3d  ", lastCiclCount);
                 lcd_PrintXY(str,0,0); 
                 
-                sprintf(str,"A %3d:%2d:%2d - %d", azG_i,azM_i,azS_i,azPosition);
+                sprintf(str,"A %3d:%2d:%2d - %5d", azG_i,azM_i,azS_i,azPosition);
                 lcd_PrintXY(str,0,1);
 
-                sprintf(str,"U %3d:%2d:%2d - %d", umG_i,umM_i,umS_i,umPosition);
+                sprintf(str,"U %3d:%2d:%2d - %5d", umG_i,umM_i,umS_i,umPosition);
                 lcd_PrintXY(str,0,2);
                 
-                sprintf(str,"F %3d:%2d:%2d - %d", fvG_i,fvM_i,fvS_i,fvPosition);
+                sprintf(str,"F %3d:%2d:%2d - %5d", fvG_i,fvM_i,fvS_i,fvPosition);
                 lcd_PrintXY(str,0,3);
         }
         

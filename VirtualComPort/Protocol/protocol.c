@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include "SSI_Sensor.h"
 #include "protocol.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
@@ -76,7 +77,8 @@ static unsigned char crcOutCompute(unsigned char *data, unsigned char len);
 void azModel(void)
 {
 int16_t azTarget;
-int16_t maxVelosity;        
+int16_t maxVelosity;    
+        azPosition = AZpinToggleReadSSI();
         if(in.msg.mode & 0x01)
         {
                 azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
@@ -114,7 +116,7 @@ void umModel(void)
 {
 int16_t umTarget;
 int16_t maxVelosity;  
-        
+        umPosition = UMpinToggleReadSSI();        
         if(in.msg.mode & 0x02)
         {
                 umTarget =  in.msg.angleL | (in.msg.angleH << 8);
@@ -143,6 +145,7 @@ int16_t maxVelosity;
 
 void fvModel(void)
 {
+        fvPosition = FVpinToggleReadSSI();
         if(in.msg.mode & 0x40)
         {
                 fvVelosity = 127 + (in.msg.speedH & 0x0F) * 10;
