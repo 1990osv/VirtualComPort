@@ -136,9 +136,9 @@ void TIM4_IRQHandler(void)
         }
         canStatus++;
  
-        //encryptTxMsg(&canTxMsg,100,10,13,7,0x0409,speed);
-        encryptTxMsg(&canTxMsg,5,1,21,azVelosity,0,0);
-        //setSpeed(&canTxMsg,100,10,speed++);        
+        encryptTxMsg(&canTxMsg,5,1,13,5,0x0700,0);//azVelosity);
+        //encryptTxMsg(&canTxMsg,5,1,21,azVelosity,0,0);
+        //setSpeed(&canTxMsg,100,10,speed++);
         HAL_TIM_IRQHandler(&htim4);
         HAL_NVIC_ClearPendingIRQ(TIM4_IRQn);         
         HAL_NVIC_EnableIRQ(TIM4_IRQn);

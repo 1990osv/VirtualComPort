@@ -22,12 +22,12 @@ void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient
         pTxMsg->IDE = CAN_ID_STD;//CAN_ID_EXT;
         pTxMsg->DLC = 1;
         pTxMsg->Data[0] = commandTP;
-        pTxMsg->Data[1] = (uint8_t)((address & 0xFF00) >> 8);
-        pTxMsg->Data[2] = (uint8_t)((address & 0x00FF));
-        pTxMsg->Data[6] = (uint8_t)((parameter & 0xFF000000) >> 24);
-        pTxMsg->Data[5] = (uint8_t)((parameter & 0x00FF0000) >> 16);
-        pTxMsg->Data[4] = (uint8_t)((parameter & 0x0000FF00) >> 8);
-        pTxMsg->Data[3] = (uint8_t)((parameter & 0x000000FF) >> 0);
+        pTxMsg->Data[1] = ((address & 0xFF00) >> 8);
+        pTxMsg->Data[2] = ((address & 0x00FF));
+        pTxMsg->Data[6] = ((parameter & 0xFF000000) >> 24);
+        pTxMsg->Data[5] = ((parameter & 0x00FF0000) >> 16);
+        pTxMsg->Data[4] = ((parameter & 0x0000FF00) >> 8);
+        pTxMsg->Data[3] = ((parameter & 0x000000FF) >> 0);
         pTxMsg->Data[7] = 0;        
 }
 
