@@ -57,7 +57,9 @@ CanTxMsgTypeDef canTxMsg;
 
 
 char str[20];
+char temp_not_delete[20];
 
+extern SSIsensor az,um,fv;
 
 /* USER CODE END PV */
 
@@ -110,7 +112,9 @@ int main(void)
 
         /* USER CODE BEGIN 2 */
         lcd_initialisation();
-
+        __disable_irq();
+        sensor_initialisation();
+        __enable_irq();
         /* USER CODE END 2 */
 
         /* Infinite loop */
@@ -120,13 +124,13 @@ int main(void)
                 sprintf(str,"CICL CNT %3d  ", lastCiclCount);
                 lcd_PrintXY(str,0,0); 
                 
-                sprintf(str,"A %3d:%2d:%2d - %5d", azG_i,azM_i,azS_i,azPosition);
+                sprintf(str,"AZ %5.1f - %5d    ", az.angle, az.code);
                 lcd_PrintXY(str,0,1);
 
-                sprintf(str,"U %3d:%2d:%2d - %5d", umG_i,umM_i,umS_i,umPosition);
+                sprintf(str,"UM %5.1f - %5d    ", um.angle, um.code);
                 lcd_PrintXY(str,0,2);
                 
-                sprintf(str,"F %3d:%2d:%2d - %5d", fvG_i,fvM_i,fvS_i,fvPosition);
+                sprintf(str,"FV %5.1f - %5d    ", fv.angle, fv.code);
                 lcd_PrintXY(str,0,3);
         }
         
@@ -224,7 +228,7 @@ static void MX_I2C3_Init(void)
 {
 
   hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 200000;
+  hi2c3.Init.ClockSpeed = 100000;
   hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;

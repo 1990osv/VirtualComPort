@@ -22,4 +22,6 @@ extern int8_t umVelosity;
 extern int8_t fvVelosity;
 
 
+void sensor_initialisation(void);
+
 #endif

@@ -65,6 +65,7 @@ union OutMsg {
         struct StructOutMsg msg;
 } out;
 
+SSIsensor az,um,fv;
 
 /*Объявление статических функций*/
 
@@ -73,40 +74,64 @@ static void resetDataFaultFlag(void);
 static unsigned char crcCompute(unsigned char *data, unsigned char len);
 static unsigned char crcOutCompute(unsigned char *data, unsigned char len);
 
+void sensor_initialisation(void)
+{
+        az.gpioDataPort = GPIOD;
+        az.gpioDataPin = GPIO_PIN_10; 
+        az.gpioClkPort = GPIOD;
+        az.gpioClkPin = GPIO_PIN_11;     
+        az.bitCount = 16;
+        az.needReadFaultBit = false;
 
+        um.gpioDataPort = GPIOD;
+        um.gpioDataPin = GPIO_PIN_8; 
+        um.gpioClkPort = GPIOD;
+        um.gpioClkPin = GPIO_PIN_9;     
+        um.bitCount = 16;
+        um.needReadFaultBit = false;
+        
+        fv.gpioDataPort = GPIOB;
+        fv.gpioDataPin = GPIO_PIN_14; 
+        fv.gpioClkPort = GPIOB;
+        fv.gpioClkPin = GPIO_PIN_15;     
+        fv.bitCount = 13;
+        fv.needReadFaultBit = false;        
+
+}
+
+//скорость по интерфейсу приходит как значение [1..10]
+//speed = 127 => скорость СПШ = 0 
 void azModel(void)
 {
 int16_t azTarget;
 int16_t maxVelosity;    
-        azPosition = AZpinToggleReadSSI();
-        if(in.msg.mode & 0x01)
+        readValue(&az);
+        azPosition = az.code;
+        if(az.fault == false)
         {
-                azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
-                maxVelosity = azTarget - azPosition;
-                maxVelosity /= 20;
-                if(maxVelosity > 100) maxVelosity = 100;
-                if(maxVelosity < -100) maxVelosity = -100; 
-                azVelosity = 127 + (uint8_t)maxVelosity;
+                if(in.msg.mode & 0x01)
+                {
+                        azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
+                        maxVelosity = azTarget - azPosition;
+                        maxVelosity /= 20;
+                        if(maxVelosity > 100) maxVelosity = 100;
+                        if(maxVelosity < -100) maxVelosity = -100; 
+                        azVelosity = 127 + (uint8_t)maxVelosity;
+                }
+                else
+                {
+                        if(in.msg.mode & 0x04)
+                                azVelosity = 127 + (in.msg.speedL & 0x0F) * 10;
+                        else if(in.msg.mode & 0x08)
+                                azVelosity = 127 - (in.msg.speedL & 0x0F) * 10;
+                        else 
+                                azVelosity = 127;
+                }
         }
         else
         {
-                //скорость по интерфейсу приходит как значение [1..10]
-                //speed = 127 => скорость СПШ = 0 
-                if(in.msg.mode & 0x04)
-                {
-                        //azPosition += azVelosity;
-                        azVelosity = 127 + (in.msg.speedL & 0x0F) * 10;
-                        //if(azVelosity < 10) speed = 0;
-                }
-                else if(in.msg.mode & 0x08)
-                {
-                        //azPosition -= azVelosity;
-                        azVelosity = 127 - (in.msg.speedL & 0x0F) * 10;
-                }
-                else 
-                        azVelosity = 127;
+                azVelosity = 127;
         }
-        
         out.msg.azimutL = azPosition & 0xFF;
         out.msg.azimutH = (azPosition >> 8) & 0xFF;
 }
@@ -116,7 +141,8 @@ void umModel(void)
 {
 int16_t umTarget;
 int16_t maxVelosity;  
-        umPosition = UMpinToggleReadSSI();        
+        readValue(&um); 
+        umPosition = um.code;
         if(in.msg.mode & 0x02)
         {
                 umTarget =  in.msg.angleL | (in.msg.angleH << 8);
@@ -145,7 +171,8 @@ int16_t maxVelosity;
 
 void fvModel(void)
 {
-        fvPosition = FVpinToggleReadSSI();
+        readValue(&fv); 
+        fvPosition = fv.code;
         if(in.msg.mode & 0x40)
         {
                 fvVelosity = 127 + (in.msg.speedH & 0x0F) * 10;
