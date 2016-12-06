@@ -95,7 +95,10 @@ void CAN1_RX0_IRQHandler(void)
         time2 = gt3 - gt2;
         HAL_CAN_IRQHandler(&hcan1);
         HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);    
-        //HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+        HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
+        HAL_GPIO_TogglePin(GPIOD,LD3_Pin); 
+        //HAL_NVIC_ClearPendingIRQ(CAN1_RX1_IRQn);
+        //HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
   /* USER CODE END CAN1_RX0_IRQn 0 */
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
         
@@ -112,8 +115,8 @@ void CAN1_TX_IRQHandler(void)
         HAL_NVIC_ClearPendingIRQ(CAN1_TX_IRQn); 
         HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
         //HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-        HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13); 
-        HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
+        HAL_GPIO_TogglePin(GPIOD,LD5_Pin); 
+        //HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
 }
 
 /**
@@ -127,22 +130,24 @@ extern CanRxMsgTypeDef canRxMsg;
 extern CanTxMsgTypeDef canTxMsg;
 void TIM4_IRQHandler(void)
 {
-        if((canStatus==0) || (canStatus>10))
-        {
-                //HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
-                HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
-                HAL_CAN_Transmit_IT(&hcan1);   
-                 
-        }
-        canStatus++;
+//        if((canStatus==0) || (canStatus>10))
+//        {
+//                //HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+//                HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+//                HAL_CAN_Transmit_IT(&hcan1);   
+//                 
+//        }
+//        canStatus++;
  
-        encryptTxMsg(&canTxMsg,5,1,13,5,0x0700,0);//azVelosity);
-        //encryptTxMsg(&canTxMsg,5,1,21,azVelosity,0,0);
+        //encryptTxMsg(&canTxMsg,5,1,13,5,0x0700,0);//azVelosity);
+        encryptTxMsg(&canTxMsg,0,1,21,azVelosity,0,0);
+        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+        HAL_CAN_Transmit_IT(&hcan1);          
         //setSpeed(&canTxMsg,100,10,speed++);
         HAL_TIM_IRQHandler(&htim4);
         HAL_NVIC_ClearPendingIRQ(TIM4_IRQn);         
-        HAL_NVIC_EnableIRQ(TIM4_IRQn);
-        HAL_GPIO_TogglePin(GPIOD,LD4_Pin);         
+        HAL_GPIO_TogglePin(GPIOD,LD4_Pin); 
+        
 }
 
 /**

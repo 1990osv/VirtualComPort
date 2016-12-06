@@ -116,9 +116,12 @@ int main(void)
         sensor_initialisation();
         __enable_irq();
         /* USER CODE END 2 */
-
+        
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
+        
+        //encryptTxMsg(&canTxMsg,5,1,13,5,0x0700,0);
+        
         while (1)
         {
                 sprintf(str,"CICL CNT %3d  ", lastCiclCount);
@@ -219,7 +222,7 @@ void MX_CAN1_Init(void)
         hcan1filter.FilterActivation = ENABLE;
      
         HAL_CAN_ConfigFilter(&hcan1, &hcan1filter);
-        
+        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);        
         HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
 }
 
@@ -227,20 +230,19 @@ void MX_CAN1_Init(void)
 static void MX_I2C3_Init(void)
 {
 
-  hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 100000;
-  hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c3.Init.OwnAddress1 = 0;
-  hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c3.Init.OwnAddress2 = 0;
-  hi2c3.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
+        hi2c3.Instance = I2C3;
+        hi2c3.Init.ClockSpeed = 400000;
+        hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
+        hi2c3.Init.OwnAddress1 = 0;
+        hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+        hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+        hi2c3.Init.OwnAddress2 = 0;
+        hi2c3.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+        hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+        if (HAL_I2C_Init(&hi2c3) != HAL_OK)
+        {
+                Error_Handler();
+        }
 }
 
 /* TIM10 init function */
@@ -249,16 +251,15 @@ static void MX_TIM4_Init(void)
         __HAL_RCC_TIM4_CLK_ENABLE();
         
         htim4.Instance = TIM4;
-        htim4.Init.Prescaler = 9600;
+        htim4.Init.Prescaler = 48000;
         htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-        htim4.Init.Period = 20; //4..5 мс период опроса CAN
+        htim4.Init.Period = 10; // Prescaler - 48000 => 1 = 1 ms (период отправки запросов по CAN)
         htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
         if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
         {
                 Error_Handler();
         }
 
-        
         if(HAL_TIM_Base_Start_IT(&htim4) != HAL_OK)
         {
                 /* Starting Error */

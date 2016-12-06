@@ -2,6 +2,34 @@
 #include "can.h"
 
 CRYPT_MSG receiveMsg;
+void encryptTxMsgEx(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient, uint8_t command, 
+                uint8_t commandTP, uint16_t address, uint32_t parameter)
+{
+        pTxMsg->IDE = 0x000;
+//        pTxMsg->StdId = ((command & 0x1F) << 6) 
+//                    | ((idSender & 0x07) << 3) 
+//                    | ((idRecipient & 0x07) << 0);
+
+        //pTxMsg->ExtId = 0x0000;
+        pTxMsg->ExtId = ((command & 0x7F) << 14) 
+                       | ((idSender & 0x7F) << 7) 
+                       | ((idRecipient & 0x7F) << 0);
+        
+        
+        
+        pTxMsg->RTR = CAN_RTR_DATA;
+        pTxMsg->IDE = CAN_ID_EXT;//;CAN_ID_STD
+        pTxMsg->DLC = 1;
+        pTxMsg->Data[0] = commandTP;
+        pTxMsg->Data[1] = ((address & 0xFF00) >> 8);
+        pTxMsg->Data[2] = ((address & 0x00FF));
+        pTxMsg->Data[6] = ((parameter & 0xFF000000) >> 24);
+        pTxMsg->Data[5] = ((parameter & 0x00FF0000) >> 16);
+        pTxMsg->Data[4] = ((parameter & 0x0000FF00) >> 8);
+        pTxMsg->Data[3] = ((parameter & 0x000000FF) >> 0);
+        pTxMsg->Data[7] = 0;        
+}
+
 void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient, uint8_t command, 
                 uint8_t commandTP, uint16_t address, uint32_t parameter)
 {
@@ -10,16 +38,15 @@ void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient
                     | ((idSender & 0x07) << 3) 
                     | ((idRecipient & 0x07) << 0);
 
-        //pTxMsg->StdId = 1385;
-        //pTxMsg->ExtId = 0x0000;
+        pTxMsg->ExtId = 0x0000;
 //        pTxMsg->ExtId = ((command & 0x7F) << 14) 
 //                       | ((idSender & 0x7F) << 7) 
 //                       | ((idRecipient & 0x7F) << 0);
-//        
+        
         
         
         pTxMsg->RTR = CAN_RTR_DATA;
-        pTxMsg->IDE = CAN_ID_STD;//CAN_ID_EXT;
+        pTxMsg->IDE = CAN_ID_STD;//;CAN_ID_EXT
         pTxMsg->DLC = 1;
         pTxMsg->Data[0] = commandTP;
         pTxMsg->Data[1] = ((address & 0xFF00) >> 8);
