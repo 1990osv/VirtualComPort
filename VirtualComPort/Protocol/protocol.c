@@ -81,21 +81,21 @@ void sensor_initialisation(void)
         az.gpioClkPort = GPIOD;
         az.gpioClkPin = GPIO_PIN_11;     
         az.bitCount = 16;
-        az.needReadFaultBit = false;
+        az.needReadFaultBit = true;
 
         um.gpioDataPort = GPIOD;
         um.gpioDataPin = GPIO_PIN_8; 
         um.gpioClkPort = GPIOD;
         um.gpioClkPin = GPIO_PIN_9;     
         um.bitCount = 16;
-        um.needReadFaultBit = false;
+        um.needReadFaultBit = true;
         
         fv.gpioDataPort = GPIOB;
         fv.gpioDataPin = GPIO_PIN_14; 
         fv.gpioClkPort = GPIOB;
         fv.gpioClkPin = GPIO_PIN_15;     
         fv.bitCount = 13;
-        fv.needReadFaultBit = false;        
+        fv.needReadFaultBit = true;        
 
 }
 
@@ -107,13 +107,12 @@ int16_t azTarget;
 int16_t maxVelosity;    
         readValue(&az);
         azPosition = az.code;
-        if(az.fault == false)
+        if(az.fault == true)
         {
                 if(in.msg.mode & 0x01)
                 {
                         azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
                         maxVelosity = azTarget - azPosition;
-                        maxVelosity /= 20;
                         if(maxVelosity > 100) maxVelosity = 100;
                         if(maxVelosity < -100) maxVelosity = -100; 
                         azVelosity = 127 + (uint8_t)maxVelosity;
@@ -147,7 +146,6 @@ int16_t maxVelosity;
         {
                 umTarget =  in.msg.angleL | (in.msg.angleH << 8);
                 maxVelosity = umTarget - umPosition;
-                maxVelosity /= 20;
                 if(maxVelosity > 100) maxVelosity = 100;
                 if(maxVelosity < -100) maxVelosity = -100; 
                 umVelosity = 127 + (uint8_t)maxVelosity;

@@ -139,7 +139,7 @@ void TIM4_IRQHandler(void)
 //        }
 //        canStatus++;
  
-        //encryptTxMsg(&canTxMsg,5,1,13,5,0x0700,0);//azVelosity);
+        //encryptTxMsg(&canTxMsg,0,1,13,7,0x0700,azVelosity);
         encryptTxMsg(&canTxMsg,0,1,21,azVelosity,0,0);
         HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
         HAL_CAN_Transmit_IT(&hcan1);          

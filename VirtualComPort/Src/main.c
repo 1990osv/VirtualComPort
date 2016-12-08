@@ -127,13 +127,18 @@ int main(void)
                 sprintf(str,"CICL CNT %3d  ", lastCiclCount);
                 lcd_PrintXY(str,0,0); 
                 
-                sprintf(str,"AZ %5.1f - %5d    ", az.angle, az.code);
+                sprintf(str,"AZ %6.2f - %5d   ", az.angle-180.0, az.code);
+                str[19]='0';
                 lcd_PrintXY(str,0,1);
 
-                sprintf(str,"UM %5.1f - %5d    ", um.angle, um.code);
+                //sprintf(str,"UM %6.2f - %5d    ", um.angle-180.0, um.code);
+                sprintf(str,"TX %d %d     ", canTxMsg.Data[0], canTxMsg.Data[1]);
+                str[19]='0';
                 lcd_PrintXY(str,0,2);
                 
-                sprintf(str,"FV %5.1f - %5d    ", fv.angle, fv.code);
+                //sprintf(str,"FV %6.2f - %5d    ", fv.angle-180.0, fv.code);
+                sprintf(str,"RX %d %d     ", canRxMsg.Data[0], canRxMsg.Data[1]);
+                str[19]='0';
                 lcd_PrintXY(str,0,3);
         }
         
