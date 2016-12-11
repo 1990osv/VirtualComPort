@@ -11,8 +11,9 @@
 void readValue(SSIsensor* s)
 {
         uint8_t bitCount;
-        uint16_t u16result = 0;
+        uint16_t u16result;
         uint16_t sensorMask; // mask equal bitCount
+        
         GPIO_PinState pinState;
         
         u16result = 0;
@@ -37,7 +38,7 @@ void readValue(SSIsensor* s)
                 sensorMask = sensorMask | 0x01;
         }
         s->code = u16result;
-        s->angle = (double)u16result * 360.0 / sensorMask;
+        s->angle = (double)u16result * (360.0 / (double)sensorMask) - 180.0;
         
         return;
 }

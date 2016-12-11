@@ -13,6 +13,16 @@
 
 #define MODEL_TICK_COUNT        100
 
+#define AZ_MAX_ANGLE            150.0
+#define AZ_MIN_ANGLE            -150.0
+
+#define UM_MAX_ANGLE            35.0
+#define UM_MIN_ANGLE            -15.0
+
+#define FV_MAX_ANGLE            100.0
+#define FV_MIN_ANGLE            100.0
+
+
 
 uint16_t modelDelay;            //не менять тип (задержка в циклах systick)
 uint8_t needRunModel;
@@ -104,7 +114,8 @@ void sensor_initialisation(void)
 void azModel(void)
 {
 int16_t azTarget;
-int16_t maxVelosity;    
+int16_t velosity, maxVelosity;    
+        
         readValue(&az);
         azPosition = az.code;
         if(az.fault == true)
@@ -117,25 +128,29 @@ int16_t maxVelosity;
                                 maxVelosity = azTarget - azPosition;
                                 if(maxVelosity > 100) maxVelosity = 100;
                                 if(maxVelosity < -100) maxVelosity = -100; 
-                                azVelosity = 127 + (uint8_t)maxVelosity;
+                                velosity = 127 + (uint8_t)maxVelosity;
                         }
                         else
-                                azVelosity = 127;
+                                velosity = 127;
                 }
                 else
                 {
                         if(in.msg.mode & 0x04)
-                                azVelosity = 127 + (in.msg.speedL & 0x0F) * 10;
+                                velosity = 127 + (in.msg.speedL & 0x0F) * 10;
                         else if(in.msg.mode & 0x08)
-                                azVelosity = 127 - (in.msg.speedL & 0x0F) * 10;
+                                velosity = 127 - (in.msg.speedL & 0x0F) * 10;
                         else 
-                                azVelosity = 127;
+                                velosity = 127;
                 }
         }
         else
         {
-                azVelosity = 127;
+                velosity = 127;
         }
+        if( (az.angle >= AZ_MAX_ANGLE) || (az.angle <= AZ_MIN_ANGLE) )
+                velosity = 127;
+
+        azVelosity = velosity;
         out.msg.azimutL = azPosition & 0xFF;
         out.msg.azimutH = (azPosition >> 8) & 0xFF;
 }
@@ -144,7 +159,7 @@ int16_t maxVelosity;
 void umModel(void)
 {
 int16_t umTarget;
-int16_t maxVelosity;  
+int16_t velosity, maxVelosity;  
         readValue(&um); 
         umPosition = um.code;
         if(in.msg.mode & 0x02)
@@ -155,30 +170,36 @@ int16_t maxVelosity;
                         maxVelosity = umTarget - umPosition;
                         if(maxVelosity > 100) maxVelosity = 100;
                         if(maxVelosity < -100) maxVelosity = -100; 
-                        umVelosity = 127 + (uint8_t)maxVelosity;
+                        velosity = 127 + (uint8_t)maxVelosity;
                 }
                 else
-                        umVelosity = 127;                        
+                        velosity = 127;                        
         }
         else
         {
                 if(in.msg.mode & 0x10)
                 {
-                        umVelosity = 127 + (in.msg.speedL >> 4) * 10;
+                        velosity = 127 + (in.msg.speedL >> 4) * 10;
                 }
                 else if(in.msg.mode & 0x20)
                 {
-                        umVelosity = 127 - (in.msg.speedL >> 4) * 10;
+                        velosity = 127 - (in.msg.speedL >> 4) * 10;
                 }
                 else
-                        umVelosity = 127;
+                        velosity = 127;
         }
+        if( (um.angle >= UM_MAX_ANGLE) || (um.angle <= UM_MIN_ANGLE) )
+        velosity = 127;
+
+        umVelosity = velosity;
+        
         out.msg.angleL = umPosition & 0xFF;
         out.msg.angleH = (umPosition >> 8) & 0xFF;
 }
 
 void fvModel(void)
 {
+int16_t velosity;
         readValue(&fv); 
         fvPosition = fv.code;
         if(in.msg.mode & 0x40)
@@ -191,6 +212,11 @@ void fvModel(void)
         }
         else
                 fvVelosity = 127;
+        if( (fv.angle >= FV_MAX_ANGLE) || (fv.angle <= FV_MIN_ANGLE) )
+        velosity = 127;
+
+        fvVelosity = velosity;
+        
         out.msg.phazeL = fvPosition & 0xFF;
         out.msg.phazeH = (fvPosition >> 8) & 0xFF;
 }
