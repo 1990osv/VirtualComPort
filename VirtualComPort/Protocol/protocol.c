@@ -111,11 +111,16 @@ int16_t maxVelosity;
         {
                 if(in.msg.mode & 0x01)
                 {
-                        azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
-                        maxVelosity = azTarget - azPosition;
-                        if(maxVelosity > 100) maxVelosity = 100;
-                        if(maxVelosity < -100) maxVelosity = -100; 
-                        azVelosity = 127 + (uint8_t)maxVelosity;
+                        if(in.msg.speedH & 0x20)
+                        {
+                                azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
+                                maxVelosity = azTarget - azPosition;
+                                if(maxVelosity > 100) maxVelosity = 100;
+                                if(maxVelosity < -100) maxVelosity = -100; 
+                                azVelosity = 127 + (uint8_t)maxVelosity;
+                        }
+                        else
+                                azVelosity = 127;
                 }
                 else
                 {
@@ -144,11 +149,16 @@ int16_t maxVelosity;
         umPosition = um.code;
         if(in.msg.mode & 0x02)
         {
-                umTarget =  in.msg.angleL | (in.msg.angleH << 8);
-                maxVelosity = umTarget - umPosition;
-                if(maxVelosity > 100) maxVelosity = 100;
-                if(maxVelosity < -100) maxVelosity = -100; 
-                umVelosity = 127 + (uint8_t)maxVelosity;
+                if(in.msg.speedH & 0x40)
+                {
+                        umTarget =  in.msg.angleL | (in.msg.angleH << 8);
+                        maxVelosity = umTarget - umPosition;
+                        if(maxVelosity > 100) maxVelosity = 100;
+                        if(maxVelosity < -100) maxVelosity = -100; 
+                        umVelosity = 127 + (uint8_t)maxVelosity;
+                }
+                else
+                        umVelosity = 127;                        
         }
         else
         {
