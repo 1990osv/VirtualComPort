@@ -1,7 +1,30 @@
 #include "stm32f4xx_hal.h"
 #include "can.h"
+#include "protocol.h"
+
+#define MY_ADDRESS              0
+
+#define USER_COMMAND_21         21
+
+
+
+
+
+CanRxMsgTypeDef canRxMsg;
+CanTxMsgTypeDef canTxMsg;
 
 CRYPT_MSG receiveMsg;
+
+void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient, uint8_t command, 
+                uint8_t commandTP, uint16_t address, uint32_t parameter);
+				
+
+
+
+void setSpeed(CanTxMsgTypeDef *pTxMsg, uint32_t idSender, uint32_t idRecipient, uint32_t speeed);
+
+
+
 void encryptTxMsgEx(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient, uint8_t command, 
                 uint8_t commandTP, uint16_t address, uint32_t parameter)
 {
@@ -33,7 +56,7 @@ void encryptTxMsgEx(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipie
 void encryptTxMsg(CanTxMsgTypeDef *pTxMsg, uint8_t idSender, uint8_t idRecipient, uint8_t command, 
                 uint8_t commandTP, uint16_t address, uint32_t parameter)
 {
-//        pTxMsg->IDE = 0x000;
+//        pTxMsg->StdId = 0x000;
         pTxMsg->StdId = ((command & 0x1F) << 6) 
                     | ((idSender & 0x07) << 3) 
                     | ((idRecipient & 0x07) << 0);
@@ -62,7 +85,7 @@ void setSpeed(CanTxMsgTypeDef *pTxMsg, uint32_t idSender, uint32_t idRecipient, 
 {
         uint32_t command;
         command = 13;
-//        pTxMsg->IDE = 0x000;
+//        pTxMsg->StdId = 0x000;
         pTxMsg->StdId = ((command & 0x1F) << 6) 
                     | ((idSender & 0x07) << 3) 
                     | ((idRecipient & 0x07) << 0);
@@ -88,19 +111,27 @@ void setSpeed(CanTxMsgTypeDef *pTxMsg, uint32_t idSender, uint32_t idRecipient, 
 
 void decryptRxMsg(CanRxMsgTypeDef *pRxMsg, CRYPT_MSG *pCryptMsg)
 {
-        pCryptMsg->idSender    = (pRxMsg->StdId & 0x00000380) >> 3;
-        pCryptMsg->idRecipient = (pRxMsg->StdId & 0x00000007) >> 0;     
-        pCryptMsg->command     = (pRxMsg->StdId & 0x000007C0) >> 6;     
+uint8_t i;        
+        pCryptMsg->idSender    = ((pRxMsg->StdId >> 3) & 0x07);
+        pCryptMsg->idRecipient = ((pRxMsg->StdId >> 0) & 0x07);
+        pCryptMsg->command     = ((pRxMsg->StdId >> 6) & 0x1F);
+        
+        i=pCryptMsg->idSender-1; 
+        //pCryptMsg->idSender-1 = AZ for 1 adress azimut drive can idSender
 
-//        pCryptMsg->idSender    = (pRxMsg->ExtId & 0x00003F80) >> 7;
-//        pCryptMsg->idRecipient = (pRxMsg->ExtId & 0x0000007F) >> 0;     
-//        pCryptMsg->command     = (pRxMsg->ExtId & 0x001FC000) >> 14;     
-
-        pCryptMsg->commandTP = pRxMsg->Data[0];
-        
-        pCryptMsg->addr = (uint16_t)(pRxMsg->Data[1] << 8 | pRxMsg->Data[2]);
-        
-        
-        pCryptMsg->param = (uint32_t)(pRxMsg->Data[6] << 24 | pRxMsg->Data[5] << 16 | 
-                                       pRxMsg->Data[4] << 8  | pRxMsg->Data[3]);
+        if(i<=FV) // AZ = 0 , i>=AZ always TRUE because i - unsigned int
+        {
+                drive[i].status = (pRxMsg->Data[0] >> 4) & 0x0F;
+                drive[i].limit  = (pRxMsg->Data[0] >> 0) & 0x03;
+        }
 }
+
+uint8_t current=AZ;
+void CANtransfer(void)
+{
+        encryptTxMsg(&canTxMsg,MY_ADDRESS,drive[current].canAddr,USER_COMMAND_21,drive[current].speed,0,0);
+        current++;
+        if(current > FV)
+                current = AZ;
+}
+

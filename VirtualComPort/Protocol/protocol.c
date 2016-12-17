@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+#include <stdbool.h>
 #include "SSI_Sensor.h"
 #include "protocol.h"
 #include "usb_device.h"
@@ -22,110 +22,119 @@
 #define FV_MAX_ANGLE            100.0
 #define FV_MIN_ANGLE            100.0
 
-
-
 uint16_t modelDelay;            //не менять тип (задержка в циклах systick)
-uint8_t needRunModel;
-
-extern  uint16_t speed;
 
 uint8_t lastCiclCount;     //номер предыдущего сообщения
 
-uint16_t azPosition;
-uint16_t umPosition;
-uint16_t fvPosition;
-
-int8_t azVelosity;
-int8_t umVelosity;
-int8_t fvVelosity;
+uint8_t cntErrorCRC;
+bool needRefresh;       //пришел новый пакет и CRC совпали
+bool alarmStop;         //пришло 20 пакетов и CRC не совпали
 
 struct StructInMsg{
-        unsigned char ciclCount;
-        unsigned char mode;
-        unsigned char azimutL;
-        unsigned char azimutH;
-        unsigned char angleL;
-        unsigned char angleH;
-        unsigned char speedL;
-        unsigned char speedH;
-        unsigned char crc;
+        uint8_t ciclCount;
+        uint8_t mode;
+        uint8_t azimutL;
+        uint8_t azimutH;
+        uint8_t angleL;
+        uint8_t angleH;
+        uint8_t speedL;
+        uint8_t speedH;
+        uint8_t crc;
 } ;
 
 struct StructOutMsg{
-        unsigned char ciclCount;
-        unsigned char azimutL;
-        unsigned char azimutH;
-        unsigned char angleL;
-        unsigned char angleH;
-        unsigned char phazeL;
-        unsigned char phazeH;
-        unsigned char stateL;
-        unsigned char stateH;
-        unsigned char driveState;
-        unsigned char crc;
+        uint8_t ciclCount;
+        uint8_t azimutL;
+        uint8_t azimutH;
+        uint8_t angleL;
+        uint8_t angleH;
+        uint8_t phazeL;
+        uint8_t phazeH;
+        uint8_t stateL;
+        uint8_t stateH;
+        uint8_t driveState;
+        uint8_t crc;
 } ;
 
+
+
 union InMsg {
-        unsigned char buf[IN_MSG_SIZE];
+        uint8_t buf[IN_MSG_SIZE];
         struct StructInMsg msg;
 } in;
 
 union OutMsg {
-        unsigned char buf[OUT_MSG_SIZE];
+        uint8_t buf[OUT_MSG_SIZE];
         struct StructOutMsg msg;
 } out;
 
-SSIsensor az,um,fv;
+SSIsensor azSensor,umSensor,fvSensor;
+
+Privod drive[3];
 
 /*Объявление статических функций*/
 
 static void setDataFaultFlag(void);
 static void resetDataFaultFlag(void);
-static unsigned char crcCompute(unsigned char *data, unsigned char len);
-static unsigned char crcOutCompute(unsigned char *data, unsigned char len);
+static uint8_t crcCompute(uint8_t *data, uint8_t len);
+static uint8_t crcOutCompute(uint8_t *data, uint8_t len);
 
 void sensor_initialisation(void)
 {
-        az.gpioDataPort = GPIOD;
-        az.gpioDataPin = GPIO_PIN_10; 
-        az.gpioClkPort = GPIOD;
-        az.gpioClkPin = GPIO_PIN_11;     
-        az.bitCount = 16;
-        az.needReadFaultBit = true;
+        azSensor.gpioDataPort = GPIOD;
+        azSensor.gpioDataPin = GPIO_PIN_10; 
+        azSensor.gpioClkPort = GPIOD;
+        azSensor.gpioClkPin = GPIO_PIN_11;     
+        azSensor.bitCount = 16;
+        azSensor.needReadFaultBit = false;
 
-        um.gpioDataPort = GPIOD;
-        um.gpioDataPin = GPIO_PIN_8; 
-        um.gpioClkPort = GPIOD;
-        um.gpioClkPin = GPIO_PIN_9;     
-        um.bitCount = 16;
-        um.needReadFaultBit = true;
+        umSensor.gpioDataPort = GPIOD;
+        umSensor.gpioDataPin = GPIO_PIN_8; 
+        umSensor.gpioClkPort = GPIOD;
+        umSensor.gpioClkPin = GPIO_PIN_9;     
+        umSensor.bitCount = 16;
+        umSensor.needReadFaultBit = true;
         
-        fv.gpioDataPort = GPIOB;
-        fv.gpioDataPin = GPIO_PIN_14; 
-        fv.gpioClkPort = GPIOB;
-        fv.gpioClkPin = GPIO_PIN_15;     
-        fv.bitCount = 13;
-        fv.needReadFaultBit = true;        
+        fvSensor.gpioDataPort = GPIOB;
+        fvSensor.gpioDataPin = GPIO_PIN_14; 
+        fvSensor.gpioClkPort = GPIOB;
+        fvSensor.gpioClkPin = GPIO_PIN_15;     
+        fvSensor.bitCount = 13;
+        fvSensor.needReadFaultBit = true;        
+}
 
+
+void drive_initialisation(void)
+{
+        drive[AZ].canAddr = 1;
+        drive[AZ].noAnswerCnt = 0;
+        drive[AZ].speed = 127;
+        
+        drive[UM].canAddr = 2;
+        drive[UM].noAnswerCnt = 0;
+        drive[UM].speed = 127;
+        
+        drive[FV].canAddr = 3;
+        drive[FV].noAnswerCnt = 0;
+        drive[FV].speed = 127;
 }
 
 //скорость по интерфейсу приходит как значение [1..10]
 //speed = 127 => скорость СПШ = 0 
 void azModel(void)
 {
-int16_t azTarget;
 int16_t velosity, maxVelosity;    
         
-        readValue(&az);
-        azPosition = az.code;
-        if(az.fault == true)
+        readValue(&azSensor);
+        drive[AZ].position = azSensor.code;
+        if(azSensor.fault == true)
         {
                 if(in.msg.mode & 0x01)
                 {
                         if(in.msg.speedH & 0x20)
                         {
-                                azTarget =  in.msg.azimutL | (in.msg.azimutH << 8);
-                                maxVelosity = azTarget - azPosition;
+                                drive[AZ].target =  in.msg.azimutL | (in.msg.azimutH << 8);
+                                maxVelosity = drive[AZ].target - drive[AZ].position;
                                 if(maxVelosity > 100) maxVelosity = 100;
                                 if(maxVelosity < -100) maxVelosity = -100; 
                                 velosity = 127 + (uint8_t)maxVelosity;
@@ -147,97 +156,109 @@ int16_t velosity, maxVelosity;
         {
                 velosity = 127;
         }
-        if( (az.angle >= AZ_MAX_ANGLE) || (az.angle <= AZ_MIN_ANGLE) )
+        if( (azSensor.angle >= AZ_MAX_ANGLE) || (azSensor.angle <= AZ_MIN_ANGLE) )
                 velosity = 127;
 
-        azVelosity = velosity;
-        out.msg.azimutL = azPosition & 0xFF;
-        out.msg.azimutH = (azPosition >> 8) & 0xFF;
+        drive[AZ].speed = velosity;
+        out.msg.azimutL = drive[AZ].position & 0xFF;
+        out.msg.azimutH = (drive[AZ].position >> 8) & 0xFF;
+        
+        if((drive[AZ].status >> 4) & 0x0F)
+                out.msg.stateL |= 0x01; 
+        else
+                out.msg.stateL &= ~(0x01);
 }
 
 
 void umModel(void)
 {
-int16_t umTarget;
-int16_t velosity, maxVelosity;  
-        readValue(&um); 
-        umPosition = um.code;
-        if(in.msg.mode & 0x02)
-        {
-                if(in.msg.speedH & 0x40)
-                {
-                        umTarget =  in.msg.angleL | (in.msg.angleH << 8);
-                        maxVelosity = umTarget - umPosition;
-                        if(maxVelosity > 100) maxVelosity = 100;
-                        if(maxVelosity < -100) maxVelosity = -100; 
-                        velosity = 127 + (uint8_t)maxVelosity;
-                }
-                else
-                        velosity = 127;                        
-        }
-        else
-        {
-                if(in.msg.mode & 0x10)
-                {
-                        velosity = 127 + (in.msg.speedL >> 4) * 10;
-                }
-                else if(in.msg.mode & 0x20)
-                {
-                        velosity = 127 - (in.msg.speedL >> 4) * 10;
-                }
-                else
-                        velosity = 127;
-        }
-        if( (um.angle >= UM_MAX_ANGLE) || (um.angle <= UM_MIN_ANGLE) )
-        velosity = 127;
+//int16_t umTarget;
+//int16_t velosity, maxVelosity;  
+//        readValue(&umSensor); 
+//        umPosition = umSensor.code;
+//        if(in.msg.mode & 0x02)
+//        {
+//                if(in.msg.speedH & 0x40)
+//                {
+//                        umTarget =  in.msg.angleL | (in.msg.angleH << 8);
+//                        maxVelosity = umTarget - umPosition;
+//                        if(maxVelosity > 100) maxVelosity = 100;
+//                        if(maxVelosity < -100) maxVelosity = -100; 
+//                        velosity = 127 + (uint8_t)maxVelosity;
+//                }
+//                else
+//                        velosity = 127;                        
+//        }
+//        else
+//        {
+//                if(in.msg.mode & 0x10)
+//                {
+//                        velosity = 127 + (in.msg.speedL >> 4) * 10;
+//                }
+//                else if(in.msg.mode & 0x20)
+//                {
+//                        velosity = 127 - (in.msg.speedL >> 4) * 10;
+//                }
+//                else
+//                        velosity = 127;
+//        }
+//        if( (umSensor.angle >= UM_MAX_ANGLE) || (umSensor.angle <= UM_MIN_ANGLE) )
+//                velosity = 127;
 
-        umVelosity = velosity;
-        
-        out.msg.angleL = umPosition & 0xFF;
-        out.msg.angleH = (umPosition >> 8) & 0xFF;
+//        umVelosity = velosity;
+//        
+//        
+//        out.msg.angleL = umPosition & 0xFF;
+//        out.msg.angleH = (umPosition >> 8) & 0xFF;
+//        
+//        if(umState &0x0F)
+//                out.msg.stateL |= 0x02;
+//        
 }
 
 void fvModel(void)
 {
-int16_t velosity;
-        readValue(&fv); 
-        fvPosition = fv.code;
-        if(in.msg.mode & 0x40)
-        {
-                fvVelosity = 127 + (in.msg.speedH & 0x0F) * 10;
-        }
-        else if(in.msg.mode & 0x80)
-        {
-                fvVelosity = 127 - (in.msg.speedH & 0x0F) * 10;
-        }
-        else
-                fvVelosity = 127;
-        if( (fv.angle >= FV_MAX_ANGLE) || (fv.angle <= FV_MIN_ANGLE) )
-        velosity = 127;
+//int16_t velosity;
+//        readValue(&fvSensor); 
+//        fvPosition = fvSensor.code;
+//        if(in.msg.mode & 0x40)
+//        {
+//                fvVelosity = 127 + (in.msg.speedH & 0x0F) * 10;
+//        }
+//        else if(in.msg.mode & 0x80)
+//        {
+//                fvVelosity = 127 - (in.msg.speedH & 0x0F) * 10;
+//        }
+//        else
+//                fvVelosity = 127;
+//        if( (fvSensor.angle >= FV_MAX_ANGLE) || (fvSensor.angle <= FV_MIN_ANGLE) )
+//                velosity = 127;
 
-        fvVelosity = velosity;
-        
-        out.msg.phazeL = fvPosition & 0xFF;
-        out.msg.phazeH = (fvPosition >> 8) & 0xFF;
+//        fvVelosity = velosity;
+//        
+//        out.msg.phazeL = fvPosition & 0xFF;
+//        out.msg.phazeH = (fvPosition >> 8) & 0xFF;
+
+//        if(fvState &0x0F)
+//                out.msg.stateL |= 0x04;        
 }
 
-void tickModel(void)
-{
-        if(++modelDelay > MODEL_TICK_COUNT)
-        {
-                modelDelay=0;
-                needRunModel = 1;               
-        }
-}
 
 void model(void)
 {
-        needRunModel = 0;
-        azModel();
-        umModel();
-        fvModel();
+        if(!alarmStop){
+                if(needRefresh){
+                        azModel();
+                        umModel();
+                        fvModel();
+                }
+        }
+        else{
+                drive[AZ].speed = 127;
+                drive[UM].speed = 127;
+                drive[FV].speed = 127;
+        }
 }
-
 
 void setDataFaultFlag(void)
 {
@@ -265,21 +286,27 @@ void transfer(void)
 
                         if ( inMsgCrc == in.msg.crc )
                         {
-                                resetDataFaultFlag();                     
+                                resetDataFaultFlag();   
+                                needRefresh = true;
+                                cntErrorCRC = 0;
                         }
                         else
                         {
                                 setDataFaultFlag();
+                                needRefresh = false;
+                                cntErrorCRC++;
                         }
+                        if(cntErrorCRC>20)
+                                alarmStop = true;
                         out.msg.crc = crcOutCompute(out.buf,OUT_MSG_SIZE - 1);
                         CDC_Transmit_FS(out.buf, OUT_MSG_SIZE);        
                 }
         }
 }
 
-unsigned char crcCompute(unsigned char *data, unsigned char len)
+uint8_t crcCompute(uint8_t *data, uint8_t len)
 {
-        volatile unsigned char i, crcComp;
+        volatile uint8_t i, crcComp;
        
         crcComp = data[0] - 1;
         for (i = 1; i < len; i++)
@@ -289,9 +316,9 @@ unsigned char crcCompute(unsigned char *data, unsigned char len)
         return crcComp;
 }
 
-unsigned char crcOutCompute(unsigned char *data, unsigned char len)
+uint8_t crcOutCompute(uint8_t *data, uint8_t len)
 {
-        volatile unsigned char i, crcComp;
+        volatile uint8_t i, crcComp;
        
         crcComp = data[0];
         for (i = 1; i < len; i++)

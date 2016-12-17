@@ -43,6 +43,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
+CAN_FilterConfTypeDef hcan1filter;
 
 I2C_HandleTypeDef hi2c3;
 
@@ -50,16 +51,10 @@ TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
-CAN_FilterConfTypeDef hcan1filter;
-CanRxMsgTypeDef canRxMsg;
-CanTxMsgTypeDef canTxMsg;
-
-
 char str[20];
 char temp_not_delete[20];
 
-extern SSIsensor az,um,fv;
+extern SSIsensor azSensor,umSensor,fvSensor;
 
 /* USER CODE END PV */
 
@@ -113,7 +108,10 @@ int main(void)
         /* USER CODE BEGIN 2 */
         lcd_initialisation();
         __disable_irq();
+        
         sensor_initialisation();
+        drive_initialisation();
+        
         __enable_irq();
         /* USER CODE END 2 */
         
@@ -123,20 +121,21 @@ int main(void)
         //encryptTxMsg(&canTxMsg,5,1,13,5,0x0700,0);
         
         while (1)
-        {
-                sprintf(str,"CICL CNT %3d  ", lastCiclCount);
+        {               
+                //           ####################
+                sprintf(str,"CICL CNT %3d", lastCiclCount);
                 lcd_PrintXY(str,0,0); 
                 
-                sprintf(str,"AZ %6.2f - %5d   ", az.angle, az.code);
+                sprintf(str,"AZ %6.2f - %5d  ", azSensor.angle, azSensor.code);
                 str[19]='0';
                 lcd_PrintXY(str,0,1);
 
-                //sprintf(str,"UM %6.2f - %5d    ", um.angle, um.code);
+                //sprintf(str,"UM %6.2f - %5d    ", umSensor.angle, umSensor.code);
                 sprintf(str,"TX %d %d     ", canTxMsg.Data[0], canTxMsg.Data[1]);
                 str[19]='0';
                 lcd_PrintXY(str,0,2);
                 
-                //sprintf(str,"FV %6.2f - %5d    ", fv.angle, fv.code);
+                //sprintf(str,"FV %6.2f - %5d    ", fvSensor.angle, fvSensor.code);
                 sprintf(str,"RX %d %d     ", canRxMsg.Data[0], canRxMsg.Data[1]);
                 str[19]='0';
                 lcd_PrintXY(str,0,3);

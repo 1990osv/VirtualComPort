@@ -59,10 +59,8 @@ void SysTick_Handler(void)
         HAL_IncTick();
         HAL_SYSTICK_IRQHandler();
         /* USER CODE BEGIN SysTick_IRQn 1 */
-        tickModel(); 
         transfer();
-        if(needRunModel) 
-                model();
+        model();
         /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -93,9 +91,10 @@ void CAN1_RX0_IRQHandler(void)
         gt3=HAL_GetTick();
         time2 = gt3 - gt2;
         HAL_CAN_IRQHandler(&hcan1);
-        HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);    
+        HAL_NVIC_ClearPendingIRQ(CAN1_RX0_IRQn);
         HAL_CAN_Receive_IT(&hcan1,CAN_FIFO0);
         HAL_GPIO_TogglePin(GPIOD,LD3_Pin); 
+        decryptRxMsg(&canRxMsg,&receiveMsg);
         //HAL_NVIC_ClearPendingIRQ(CAN1_RX1_IRQn);
         //HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
   /* USER CODE END CAN1_RX0_IRQn 0 */
@@ -129,20 +128,10 @@ extern CanRxMsgTypeDef canRxMsg;
 extern CanTxMsgTypeDef canTxMsg;
 void TIM4_IRQHandler(void)
 {
-//        if((canStatus==0) || (canStatus>10))
-//        {
-//                //HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
-//                HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
-//                HAL_CAN_Transmit_IT(&hcan1);   
-//                 
-//        }
-//        canStatus++;
- 
-        //encryptTxMsg(&canTxMsg,0,1,13,7,0x0700,azVelosity);
-        encryptTxMsg(&canTxMsg,0,1,21,azVelosity,0,0);
+        CANtransfer();
         HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
         HAL_CAN_Transmit_IT(&hcan1);          
-        //setSpeed(&canTxMsg,100,10,speed++);
+        
         HAL_TIM_IRQHandler(&htim4);
         HAL_NVIC_ClearPendingIRQ(TIM4_IRQn);         
         HAL_GPIO_TogglePin(GPIOD,LD4_Pin); 
