@@ -61,6 +61,12 @@ void SysTick_Handler(void)
         /* USER CODE BEGIN SysTick_IRQn 1 */
         transfer();
         model();
+        if(alarmStopCnt < ALARM_DELAY_MS){ 
+                alarmStopCnt++;
+                alarmDelayStop = false;
+        }
+        else
+                alarmDelayStop = true;
         /* USER CODE END SysTick_IRQn 1 */
 }
 

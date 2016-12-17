@@ -26,7 +26,12 @@ uint8_t lastCiclCount;     //номер предыдущего сообщени�
 
 uint8_t cntErrorCRC;
 
+uint16_t alarmStopCnt;  //счетчик времени. 
+                        //если от компьютера не приходят сообщения остановить привода
+bool alarmDelayStop;    //alarmStopCnt досчитал до ALARM_DELAY_MS
+
 bool alarmStop;         //пришло 20 пакетов и CRC не совпали
+
 
 struct StructInMsg{
         uint8_t ciclCount;
@@ -54,8 +59,6 @@ struct StructOutMsg{
         uint8_t crc;
 } ;
 
-
-
 union InMsg {
         uint8_t buf[IN_MSG_SIZE];
         struct StructInMsg msg;
@@ -68,7 +71,7 @@ union OutMsg {
 
 SSIsensor azSensor,umSensor,fvSensor;
 
-Privod drive[3];
+Privod drive[DRIVE_COUNT];
 
 /*Объявление статических функций*/
 
@@ -234,7 +237,7 @@ int16_t velosity;
 
 void model(void)
 {
-        if(!alarmStop){ // приняли 20 пакетов и CRC не совпала
+        if((!alarmStop) && (!alarmDelayStop)){
                 azModel();
                 umModel();
                 fvModel();
@@ -273,8 +276,9 @@ void transfer(void)
         if (CDC_Receive_FS(in.buf, &Len) == USBD_OK)
         {
                 inMsgCrc = crcCompute(in.buf, IN_MSG_SIZE - 1);
-                if(lastCiclCount != in.msg.ciclCount)
+                if(lastCiclCount != in.msg.ciclCount) // приняли новое сообщение от компьютера
                 {
+                        alarmStopCnt = 0;
                         lastCiclCount = in.msg.ciclCount;
                         out.msg.ciclCount = in.msg.ciclCount;
 

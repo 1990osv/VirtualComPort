@@ -4,18 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
-enum {
-        AZ=0,
-        UM=1,
-        FV=2  
-};
-
-
-void transfer(void);
-void model(void);
-
-extern uint8_t lastCiclCount;     //номер предыдущего сообщения
+#define ALARM_DELAY_MS  2000
 
 typedef struct {
         uint8_t canAddr;
@@ -27,7 +16,30 @@ typedef struct {
         uint8_t limit;
 } Privod;
 
-extern Privod drive[3];
+enum {
+        AZ=0,
+        UM=1,
+        FV=2,
+        DRIVE_COUNT
+};
+
+extern Privod drive[DRIVE_COUNT];
+
+extern uint16_t alarmStopCnt;   //счетчик времени. 
+                                //если от компьютера не приходят сообщения остановить привода
+
+
+extern bool alarmStop;
+extern bool alarmDelayStop;
+
+extern uint8_t lastCiclCount;     //номер предыдущего сообщения
+
+
+void transfer(void);
+void model(void);
+
+
+
 
 void sensor_initialisation(void);
 void drive_initialisation(void);
