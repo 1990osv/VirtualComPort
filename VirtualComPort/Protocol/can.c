@@ -3,12 +3,8 @@
 #include "protocol.h"
 
 #define MY_ADDRESS              0
-
 #define USER_COMMAND_21         21
-
-
-
-
+#define DRIVE_NOT_CONNECT       0x10
 
 CanRxMsgTypeDef canRxMsg;
 CanTxMsgTypeDef canTxMsg;
@@ -121,8 +117,9 @@ uint8_t i;
 
         if(i<=FV) // AZ = 0 , i>=AZ always TRUE because i - unsigned int
         {
+                drive[i].noAnswerCnt = 0;
                 drive[i].status = (pRxMsg->Data[0] >> 4) & 0x0F;
-                drive[i].limit  = (pRxMsg->Data[0] >> 0) & 0x03;
+                drive[i].limit  = (~(pRxMsg->Data[0] >> 0)) & 0x03;
         }
 }
 
@@ -130,6 +127,12 @@ uint8_t current=AZ;
 void CANtransfer(void)
 {
         encryptTxMsg(&canTxMsg,MY_ADDRESS,drive[current].canAddr,USER_COMMAND_21,drive[current].speed,0,0);
+        if(drive[current].noAnswerCnt < 10){
+                drive[current].noAnswerCnt ++;
+                drive[current].status &= ~(DRIVE_NOT_CONNECT);
+        }
+        else
+                drive[current].status |= DRIVE_NOT_CONNECT;
         current++;
         if(current > FV)
                 current = AZ;

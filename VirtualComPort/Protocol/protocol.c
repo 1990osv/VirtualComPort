@@ -11,8 +11,6 @@
 #define INTERFACE_STATE         3
 #define INTERFACE_STATE_CNT     4
 
-#define MODEL_TICK_COUNT        100
-
 #define AZ_MAX_ANGLE            150.0
 #define AZ_MIN_ANGLE            -150.0
 
@@ -27,7 +25,7 @@ uint16_t modelDelay;            //не менять тип (задержка в 
 uint8_t lastCiclCount;     //номер предыдущего сообщения
 
 uint8_t cntErrorCRC;
-bool needRefresh;       //пришел новый пакет и CRC совпали
+
 bool alarmStop;         //пришло 20 пакетов и CRC не совпали
 
 struct StructInMsg{
@@ -76,6 +74,8 @@ Privod drive[3];
 
 static void setDataFaultFlag(void);
 static void resetDataFaultFlag(void);
+static void setDataFaultCntFlag(void);
+static void resetDataFaultCntFlag(void);
 static uint8_t crcCompute(uint8_t *data, uint8_t len);
 static uint8_t crcOutCompute(uint8_t *data, uint8_t len);
 
@@ -127,131 +127,117 @@ int16_t velosity, maxVelosity;
         
         readValue(&azSensor);
         drive[AZ].position = azSensor.code;
-        if(azSensor.fault == true)
+
+        if(in.msg.mode & 0x01)
         {
-                if(in.msg.mode & 0x01)
+                if((in.msg.speedH & 0x20) && (azSensor.fault == false))
                 {
-                        if(in.msg.speedH & 0x20)
-                        {
-                                drive[AZ].target =  in.msg.azimutL | (in.msg.azimutH << 8);
-                                maxVelosity = drive[AZ].target - drive[AZ].position;
-                                if(maxVelosity > 100) maxVelosity = 100;
-                                if(maxVelosity < -100) maxVelosity = -100; 
-                                velosity = 127 + (uint8_t)maxVelosity;
-                        }
-                        else
-                                velosity = 127;
+                        drive[AZ].target =  in.msg.azimutL | (in.msg.azimutH << 8);
+                        maxVelosity = drive[AZ].target - drive[AZ].position;
+                        if(maxVelosity > 100) maxVelosity = 100;
+                        if(maxVelosity < -100) maxVelosity = -100; 
+                        velosity = 127 + (uint8_t)maxVelosity;
                 }
                 else
-                {
-                        if(in.msg.mode & 0x04)
-                                velosity = 127 + (in.msg.speedL & 0x0F) * 10;
-                        else if(in.msg.mode & 0x08)
-                                velosity = 127 - (in.msg.speedL & 0x0F) * 10;
-                        else 
-                                velosity = 127;
-                }
+                        velosity = 127;
         }
         else
         {
-                velosity = 127;
+                if(in.msg.mode & 0x04)
+                        velosity = 127 + (in.msg.speedL & 0x0F) * 10;
+                else if(in.msg.mode & 0x08)
+                        velosity = 127 - (in.msg.speedL & 0x0F) * 10;
+                else 
+                        velosity = 127;
         }
+#ifdef DEBUG_NOT_CONNECT_ENCODER
         if( (azSensor.angle >= AZ_MAX_ANGLE) || (azSensor.angle <= AZ_MIN_ANGLE) )
                 velosity = 127;
-
+#endif
         drive[AZ].speed = velosity;
         out.msg.azimutL = drive[AZ].position & 0xFF;
         out.msg.azimutH = (drive[AZ].position >> 8) & 0xFF;
         
-        if((drive[AZ].status >> 4) & 0x0F)
-                out.msg.stateL |= 0x01; 
-        else
-                out.msg.stateL &= ~(0x01);
 }
 
 
 void umModel(void)
 {
-//int16_t umTarget;
-//int16_t velosity, maxVelosity;  
-//        readValue(&umSensor); 
-//        umPosition = umSensor.code;
-//        if(in.msg.mode & 0x02)
-//        {
-//                if(in.msg.speedH & 0x40)
-//                {
-//                        umTarget =  in.msg.angleL | (in.msg.angleH << 8);
-//                        maxVelosity = umTarget - umPosition;
-//                        if(maxVelosity > 100) maxVelosity = 100;
-//                        if(maxVelosity < -100) maxVelosity = -100; 
-//                        velosity = 127 + (uint8_t)maxVelosity;
-//                }
-//                else
-//                        velosity = 127;                        
-//        }
-//        else
-//        {
-//                if(in.msg.mode & 0x10)
-//                {
-//                        velosity = 127 + (in.msg.speedL >> 4) * 10;
-//                }
-//                else if(in.msg.mode & 0x20)
-//                {
-//                        velosity = 127 - (in.msg.speedL >> 4) * 10;
-//                }
-//                else
-//                        velosity = 127;
-//        }
-//        if( (umSensor.angle >= UM_MAX_ANGLE) || (umSensor.angle <= UM_MIN_ANGLE) )
-//                velosity = 127;
-
-//        umVelosity = velosity;
-//        
-//        
-//        out.msg.angleL = umPosition & 0xFF;
-//        out.msg.angleH = (umPosition >> 8) & 0xFF;
-//        
-//        if(umState &0x0F)
-//                out.msg.stateL |= 0x02;
-//        
+int16_t velosity, maxVelosity;  
+        readValue(&umSensor); 
+        drive[UM].position = umSensor.code;
+        if(in.msg.mode & 0x02)
+        {
+                if((in.msg.speedH & 0x40) && (umSensor.fault == false))
+                {
+                        drive[UM].target =  in.msg.angleL | (in.msg.angleH << 8);
+                        maxVelosity = drive[UM].target - drive[UM].position;
+                        if(maxVelosity > 100) maxVelosity = 100;
+                        if(maxVelosity < -100) maxVelosity = -100; 
+                        velosity = 127 + (uint8_t)maxVelosity;
+                }
+                else
+                        velosity = 127;                        
+        }
+        else
+        {
+                if(in.msg.mode & 0x10)
+                {
+                        velosity = 127 + (in.msg.speedL >> 4) * 10;
+                }
+                else if(in.msg.mode & 0x20)
+                {
+                        velosity = 127 - (in.msg.speedL >> 4) * 10;
+                }
+                else
+                        velosity = 127;
+        }
+#ifdef DEBUG_NOT_CONNECT_ENCODER        
+        if( (umSensor.angle >= UM_MAX_ANGLE) || (umSensor.angle <= UM_MIN_ANGLE) )
+                velosity = 127;
+#endif
+        drive[UM].speed = velosity;
+        
+        
+        out.msg.angleL = drive[UM].position & 0xFF;
+        out.msg.angleH = (drive[UM].position >> 8) & 0xFF;
+        
+       
 }
 
 void fvModel(void)
 {
-//int16_t velosity;
-//        readValue(&fvSensor); 
-//        fvPosition = fvSensor.code;
-//        if(in.msg.mode & 0x40)
-//        {
-//                fvVelosity = 127 + (in.msg.speedH & 0x0F) * 10;
-//        }
-//        else if(in.msg.mode & 0x80)
-//        {
-//                fvVelosity = 127 - (in.msg.speedH & 0x0F) * 10;
-//        }
-//        else
-//                fvVelosity = 127;
-//        if( (fvSensor.angle >= FV_MAX_ANGLE) || (fvSensor.angle <= FV_MIN_ANGLE) )
-//                velosity = 127;
+int16_t velosity;
+        readValue(&fvSensor); 
+        drive[FV].position = fvSensor.code;
+        if(in.msg.mode & 0x40)
+        {
+                velosity = 127 + (in.msg.speedH & 0x0F) * 10;
+        }
+        else if(in.msg.mode & 0x80)
+        {
+                velosity = 127 - (in.msg.speedH & 0x0F) * 10;
+        }
+        else
+                velosity = 127;
+#ifdef DEBUG_NOT_CONNECT_ENCODER
+        if( (fvSensor.angle >= FV_MAX_ANGLE) || (fvSensor.angle <= FV_MIN_ANGLE) )
+                velosity = 127;
+#endif
+        drive[FV].speed = velosity;
+        
+        out.msg.phazeL = drive[FV].position & 0xFF;
+        out.msg.phazeH = (drive[FV].position >> 8) & 0xFF;
 
-//        fvVelosity = velosity;
-//        
-//        out.msg.phazeL = fvPosition & 0xFF;
-//        out.msg.phazeH = (fvPosition >> 8) & 0xFF;
-
-//        if(fvState &0x0F)
-//                out.msg.stateL |= 0x04;        
 }
 
 
 void model(void)
 {
-        if(!alarmStop){
-                if(needRefresh){
-                        azModel();
-                        umModel();
-                        fvModel();
-                }
+        if(!alarmStop){ // приняли 20 пакетов и CRC не совпала
+                azModel();
+                umModel();
+                fvModel();
         }
         else{
                 drive[AZ].speed = 127;
@@ -263,13 +249,21 @@ void model(void)
 void setDataFaultFlag(void)
 {
         out.msg.stateL |= (1<<(INTERFACE_STATE));
-        HAL_GPIO_WritePin(GPIOD,GPIO_PIN_15,GPIO_PIN_SET);        
 }
 
 void resetDataFaultFlag(void)
 {
         out.msg.stateL &= (~(1<<(INTERFACE_STATE)));
-        HAL_GPIO_WritePin(GPIOD,GPIO_PIN_15,GPIO_PIN_RESET);
+}
+
+void setDataFaultCntFlag(void)
+{
+        out.msg.stateL |= (1<<(INTERFACE_STATE_CNT));
+}
+
+void resetDataFaultCntFlag(void)
+{
+        out.msg.stateL &= (~(1<<(INTERFACE_STATE_CNT)));
 }
 
 void transfer(void)
@@ -286,19 +280,34 @@ void transfer(void)
 
                         if ( inMsgCrc == in.msg.crc )
                         {
-                                resetDataFaultFlag();   
-                                needRefresh = true;
+                                resetDataFaultFlag();
+                                resetDataFaultCntFlag();
                                 cntErrorCRC = 0;
                         }
                         else
                         {
                                 setDataFaultFlag();
-                                needRefresh = false;
                                 cntErrorCRC++;
                         }
-                        if(cntErrorCRC>20)
+                        if(cntErrorCRC>20){
                                 alarmStop = true;
+                                setDataFaultCntFlag();
+                        }
                         out.msg.crc = crcOutCompute(out.buf,OUT_MSG_SIZE - 1);
+                        
+                        out.msg.stateL &= ~(0x07); // обнулили статус готовности всех 3-х приводов
+                        
+                        if(drive[AZ].status)
+                                out.msg.stateL |= 0x01;
+                        if(drive[UM].status)
+                                out.msg.stateL |= 0x02;
+                        if(drive[FV].status)
+                                out.msg.stateL |= 0x04;
+                        
+                        out.msg.stateH = drive[AZ].limit | 
+                                        (drive[UM].limit << 2)| 
+                                        (drive[FV].limit << 4);
+                        
                         CDC_Transmit_FS(out.buf, OUT_MSG_SIZE);        
                 }
         }

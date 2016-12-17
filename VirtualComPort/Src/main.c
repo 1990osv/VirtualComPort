@@ -39,6 +39,9 @@
 #include "protocol.h"
 #include "i2c_lcd.h"
 #include "can.h"
+
+#define DEBUG_NOT_CONNECT_ENCODER
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -131,12 +134,12 @@ int main(void)
                 lcd_PrintXY(str,0,1);
 
                 //sprintf(str,"UM %6.2f - %5d    ", umSensor.angle, umSensor.code);
-                sprintf(str,"TX %d %d     ", canTxMsg.Data[0], canTxMsg.Data[1]);
+                sprintf(str,"AZ %3d %2d %2d", drive[AZ].speed, drive[AZ].status, drive[AZ].limit);
                 str[19]='0';
                 lcd_PrintXY(str,0,2);
                 
                 //sprintf(str,"FV %6.2f - %5d    ", fvSensor.angle, fvSensor.code);
-                sprintf(str,"RX %d %d     ", canRxMsg.Data[0], canRxMsg.Data[1]);
+                sprintf(str,"UM %3d %2d %2d", drive[UM].speed, drive[UM].status, drive[UM].limit);
                 str[19]='0';
                 lcd_PrintXY(str,0,3);
         }
