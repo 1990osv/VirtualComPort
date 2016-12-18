@@ -60,8 +60,8 @@ USBD_HandleTypeDef  *hUsbDevice_0;
 /* USER CODE BEGIN PRIVATE_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  9
-#define APP_TX_DATA_SIZE  11
+#define APP_RX_DATA_SIZE  128 //9
+#define APP_TX_DATA_SIZE  128 //11
 /* USER CODE END PRIVATE_DEFINES */
 /**
   * @}

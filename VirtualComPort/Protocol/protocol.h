@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "SSI_Sensor.h"
+
 #define ALARM_DELAY_MS  2000
 
 typedef struct {
@@ -20,11 +22,11 @@ enum {
         AZ=0,
         UM=1,
         FV=2,
-        DRIVE_COUNT
+        AXIS_COUNT
 };
 
-extern Privod drive[DRIVE_COUNT];
-
+extern Privod drive[AXIS_COUNT];
+extern SSIsensor sensor[AXIS_COUNT];
 extern uint16_t alarmStopCnt;   //счетчик времени. 
                                 //если от компьютера не приходят сообщения остановить привода
 

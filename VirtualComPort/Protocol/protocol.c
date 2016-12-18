@@ -69,9 +69,9 @@ union OutMsg {
         struct StructOutMsg msg;
 } out;
 
-SSIsensor azSensor,umSensor,fvSensor;
+SSIsensor sensor[AXIS_COUNT];
 
-Privod drive[DRIVE_COUNT];
+Privod drive[AXIS_COUNT];
 
 /*Объявление статических функций*/
 
@@ -84,26 +84,26 @@ static uint8_t crcOutCompute(uint8_t *data, uint8_t len);
 
 void sensor_initialisation(void)
 {
-        azSensor.gpioDataPort = GPIOD;
-        azSensor.gpioDataPin = GPIO_PIN_10; 
-        azSensor.gpioClkPort = GPIOD;
-        azSensor.gpioClkPin = GPIO_PIN_11;     
-        azSensor.bitCount = 16;
-        azSensor.needReadFaultBit = false;
+        sensor[AZ].gpioDataPort = GPIOD;
+        sensor[AZ].gpioDataPin = GPIO_PIN_10; 
+        sensor[AZ].gpioClkPort = GPIOD;
+        sensor[AZ].gpioClkPin = GPIO_PIN_11;     
+        sensor[AZ].bitCount = 16;
+        sensor[AZ].needReadFaultBit = false;
 
-        umSensor.gpioDataPort = GPIOD;
-        umSensor.gpioDataPin = GPIO_PIN_8; 
-        umSensor.gpioClkPort = GPIOD;
-        umSensor.gpioClkPin = GPIO_PIN_9;     
-        umSensor.bitCount = 16;
-        umSensor.needReadFaultBit = true;
+        sensor[UM].gpioDataPort = GPIOD;
+        sensor[UM].gpioDataPin = GPIO_PIN_8; 
+        sensor[UM].gpioClkPort = GPIOD;
+        sensor[UM].gpioClkPin = GPIO_PIN_9;     
+        sensor[UM].bitCount = 16;
+        sensor[UM].needReadFaultBit = true;
         
-        fvSensor.gpioDataPort = GPIOB;
-        fvSensor.gpioDataPin = GPIO_PIN_14; 
-        fvSensor.gpioClkPort = GPIOB;
-        fvSensor.gpioClkPin = GPIO_PIN_15;     
-        fvSensor.bitCount = 13;
-        fvSensor.needReadFaultBit = true;        
+        sensor[FV].gpioDataPort = GPIOB;
+        sensor[FV].gpioDataPin = GPIO_PIN_14; 
+        sensor[FV].gpioClkPort = GPIOB;
+        sensor[FV].gpioClkPin = GPIO_PIN_15;     
+        sensor[FV].bitCount = 13;
+        sensor[FV].needReadFaultBit = true;        
 }
 
 
@@ -128,12 +128,12 @@ void azModel(void)
 {
 int16_t velosity, maxVelosity;    
         
-        readValue(&azSensor);
-        drive[AZ].position = azSensor.code;
+        readValue(&sensor[AZ]);
+        drive[AZ].position = sensor[AZ].code;
 
         if(in.msg.mode & 0x01)
         {
-                if((in.msg.speedH & 0x20) && (azSensor.fault == false))
+                if((in.msg.speedH & 0x20) && (sensor[AZ].fault == false))
                 {
                         drive[AZ].target =  in.msg.azimutL | (in.msg.azimutH << 8);
                         maxVelosity = drive[AZ].target - drive[AZ].position;
@@ -167,11 +167,11 @@ int16_t velosity, maxVelosity;
 void umModel(void)
 {
 int16_t velosity, maxVelosity;  
-        readValue(&umSensor); 
-        drive[UM].position = umSensor.code;
+        readValue(&sensor[UM]); 
+        drive[UM].position = sensor[UM].code;
         if(in.msg.mode & 0x02)
         {
-                if((in.msg.speedH & 0x40) && (umSensor.fault == false))
+                if((in.msg.speedH & 0x40) && (sensor[UM].fault == false))
                 {
                         drive[UM].target =  in.msg.angleL | (in.msg.angleH << 8);
                         maxVelosity = drive[UM].target - drive[UM].position;
@@ -211,8 +211,8 @@ int16_t velosity, maxVelosity;
 void fvModel(void)
 {
 int16_t velosity;
-        readValue(&fvSensor); 
-        drive[FV].position = fvSensor.code;
+        readValue(&sensor[FV]); 
+        drive[FV].position = sensor[FV].code;
         if(in.msg.mode & 0x40)
         {
                 velosity = 127 + (in.msg.speedH & 0x0F) * 10;

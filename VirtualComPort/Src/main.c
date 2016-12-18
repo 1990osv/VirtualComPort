@@ -42,6 +42,7 @@
 
 #define DEBUG_NOT_CONNECT_ENCODER
 
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -57,7 +58,6 @@ TIM_HandleTypeDef htim4;
 char str[20];
 char temp_not_delete[20];
 
-extern SSIsensor azSensor,umSensor,fvSensor;
 
 /* USER CODE END PV */
 
@@ -84,6 +84,79 @@ void lcd_PrintSpase(unsigned char n)
 {
         while(n--)
         lcd_Data(' ');
+}
+
+void print_drive_status(char *str, Privod *d, SSIsensor *s)
+{
+        //|____________________|
+        //|AZ ###.##         ##|
+        sprintf(str,"%6.2f ", s->angle); lcd_PrintC(str);
+        
+        //|AZ ###.## ERROR 0x##|
+        if(d->status){
+                sprintf(str,"ERROR %#02x", d->status); lcd_PrintC(str);
+        }
+        else{
+        //|AZ ###.## LIMIT    +|
+                if(d->limit == 1){
+                        sprintf(str,"LIMIT    +"); lcd_PrintC(str);
+                }
+                else if(d->limit == 2){
+                        sprintf(str,"LIMIT    -"); lcd_PrintC(str);
+                }
+        //|AZ ###.## SPEED ####|                
+                else {
+                        sprintf(str,"SPEED %4d",127-d->speed); lcd_PrintC(str);
+                }
+                        
+        }
+}
+uint8_t blink_cnt;
+void print_system_status(char *str)
+{
+        blink_cnt++;
+        //|____________________|
+        //|> DEVICE CONNECTED >|
+        //|< DEVICE CONNECTED <|
+        //|DEVICE NOT CONNECT  |
+        //|DEVICE CONNECT ERROR|
+        if((!alarmStop) && (!alarmDelayStop)){
+                
+                if(blink_cnt == 19){
+                        blink_cnt=0;
+                }
+                else if(blink_cnt == 15){
+                        sprintf(str,"> DEVICE CONNECTED >");lcd_PrintC(str);
+                }
+                else if(blink_cnt == 10){
+                        sprintf(str,"  DEVICE CONNECTED  ");lcd_PrintC(str);
+                }
+                else if(blink_cnt == 5){
+                        sprintf(str,"< DEVICE CONNECTED <");lcd_PrintC(str);
+                }
+                else if(blink_cnt == 1){
+                        sprintf(str,"  DEVICE CONNECTED  ");lcd_PrintC(str);
+                }
+        }
+        else if(alarmDelayStop){
+                if(blink_cnt == 5){
+                        blink_cnt=0;
+                        sprintf(str,"                    ");lcd_PrintC(str);
+                }
+                else if(blink_cnt == 1){
+                        sprintf(str,"DEVICE NOT CONNECTED");lcd_PrintC(str);
+                }                
+        }
+        else if(alarmStop){
+                if(blink_cnt == 5){
+                        blink_cnt=0;                
+                        sprintf(str,"                    ");lcd_PrintC(str);
+                }
+                else if(blink_cnt == 1){
+                        sprintf(str,"DEVICE CONNECT ERROR");lcd_PrintC(str);
+                }                              
+        }                
+        
 }
 
 /* USER CODE END 0 */
@@ -125,23 +198,17 @@ int main(void)
         
         while (1)
         {               
-                //           ####################
-                sprintf(str,"CICL CNT %3d", lastCiclCount);
-                lcd_PrintXY(str,0,0); 
+                lcd_Goto(0,0); 
+                print_system_status(str);
                 
-                sprintf(str,"AZ %6.2f - %5d  ", azSensor.angle, azSensor.code);
-                str[19]='0';
-                lcd_PrintXY(str,0,1);
+                lcd_PrintXY("AZ ",0,1);
+                print_drive_status(str,&drive[AZ],&sensor[AZ]);
 
-                //sprintf(str,"UM %6.2f - %5d    ", umSensor.angle, umSensor.code);
-                sprintf(str,"AZ %3d %2d %2d", drive[AZ].speed, drive[AZ].status, drive[AZ].limit);
-                str[19]='0';
-                lcd_PrintXY(str,0,2);
-                
-                //sprintf(str,"FV %6.2f - %5d    ", fvSensor.angle, fvSensor.code);
-                sprintf(str,"UM %3d %2d %2d", drive[UM].speed, drive[UM].status, drive[UM].limit);
-                str[19]='0';
-                lcd_PrintXY(str,0,3);
+                lcd_PrintXY("UM ",0,2);
+                print_drive_status(str,&drive[UM],&sensor[UM]);
+
+                lcd_PrintXY("FV ",0,3);
+                print_drive_status(str,&drive[FV],&sensor[FV]);
         }
         
   /* USER CODE END WHILE */
