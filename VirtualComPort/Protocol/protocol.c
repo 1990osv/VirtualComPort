@@ -89,7 +89,7 @@ void sensor_initialisation(void)
         sensor[AZ].gpioClkPort = GPIOD;
         sensor[AZ].gpioClkPin = GPIO_PIN_11;     
         sensor[AZ].bitCount = 16;
-        sensor[AZ].needReadFaultBit = false;
+        sensor[AZ].needReadFaultBit = true;
 
         sensor[UM].gpioDataPort = GPIOD;
         sensor[UM].gpioDataPin = GPIO_PIN_8; 
@@ -127,10 +127,7 @@ void drive_initialisation(void)
 void azModel(void)
 {
 int16_t velosity, maxVelosity;    
-        
-        readValue(&sensor[AZ]);
         drive[AZ].position = sensor[AZ].code;
-
         if(in.msg.mode & 0x01)
         {
                 if((in.msg.speedH & 0x20) && (sensor[AZ].fault == false))
@@ -167,7 +164,6 @@ int16_t velosity, maxVelosity;
 void umModel(void)
 {
 int16_t velosity, maxVelosity;  
-        readValue(&sensor[UM]); 
         drive[UM].position = sensor[UM].code;
         if(in.msg.mode & 0x02)
         {
@@ -211,7 +207,6 @@ int16_t velosity, maxVelosity;
 void fvModel(void)
 {
 int16_t velosity;
-        readValue(&sensor[FV]); 
         drive[FV].position = sensor[FV].code;
         if(in.msg.mode & 0x40)
         {
@@ -237,6 +232,12 @@ int16_t velosity;
 
 void model(void)
 {
+        if(readValue(&sensor[AZ]))
+                drive[AZ].status &= ~(SENSOR_ERROR);
+        if(readValue(&sensor[UM]))
+                drive[UM].status &= ~(SENSOR_ERROR);
+        if(readValue(&sensor[FV]))
+                drive[FV].status &= ~(SENSOR_ERROR);
         if((!alarmStop) && (!alarmDelayStop)){
                 azModel();
                 umModel();

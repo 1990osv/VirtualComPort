@@ -6,7 +6,11 @@
 
 #include "SSI_Sensor.h"
 
-#define ALARM_DELAY_MS  2000
+#define ALARM_DELAY_MS          2000
+
+//error code
+#define DRIVE_NOT_CONNECT       0x10
+#define SENSOR_ERROR            0x20
 
 typedef struct {
         uint8_t canAddr;
@@ -39,9 +43,6 @@ extern uint8_t lastCiclCount;     //номер предыдущего сообщ
 
 void transfer(void);
 void model(void);
-
-
-
 
 void sensor_initialisation(void);
 void drive_initialisation(void);

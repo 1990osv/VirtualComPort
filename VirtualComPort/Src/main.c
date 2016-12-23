@@ -40,7 +40,7 @@
 #include "i2c_lcd.h"
 #include "can.h"
 
-#define DEBUG_NOT_CONNECT_ENCODER
+//#define DEBUG_NOT_CONNECT_ENCODER
 
 
 /* USER CODE END Includes */

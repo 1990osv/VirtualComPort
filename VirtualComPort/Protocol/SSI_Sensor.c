@@ -8,7 +8,7 @@
   * @param  
   * @retval
   */
-void readValue(SSIsensor* s)
+bool readValue(SSIsensor* s)
 {
         uint8_t bitCount;
         uint16_t u16result;
@@ -40,5 +40,5 @@ void readValue(SSIsensor* s)
         s->code = u16result;
         s->angle = (double)u16result * (360.0 / (double)sensorMask) - 180.0;
         
-        return;
+        return s->fault;
 }

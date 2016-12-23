@@ -21,7 +21,7 @@ typedef struct
 
 } SSIsensor;
 
-
-void readValue(SSIsensor* s);
+//return true or false sensor state
+bool readValue(SSIsensor* s);
 
 #endif /* __SSI_SENSOR_H */

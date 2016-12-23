@@ -4,7 +4,7 @@
 
 #define MY_ADDRESS              0
 #define USER_COMMAND_21         21
-#define DRIVE_NOT_CONNECT       0x10
+
 
 CanRxMsgTypeDef canRxMsg;
 CanTxMsgTypeDef canTxMsg;
