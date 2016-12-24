@@ -56,7 +56,7 @@ TIM_HandleTypeDef htim4;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 char str[20];
-char temp_not_delete[20];
+char temp_not_delete[20] = {0};
 
 
 /* USER CODE END PV */
@@ -90,11 +90,11 @@ void print_drive_status(char *str, Privod *d, SSIsensor *s)
 {
         //|____________________|
         //|AZ ###.##         ##|
-        sprintf(str,"%6.2f ", s->angle); lcd_PrintC(str);
+        sprintf(str,"%7.2f ", s->angle); lcd_PrintC(str);
         
         //|AZ ###.## ERROR 0x##|
         if(d->status){
-                sprintf(str,"ERROR %#02x", d->status); lcd_PrintC(str);
+                sprintf(str,"CODE %#02x", d->status); lcd_PrintC(str);
         }
         else{
         //|AZ ###.## LIMIT    +|
