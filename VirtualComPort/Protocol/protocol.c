@@ -18,7 +18,7 @@
 #define UM_MIN_ANGLE            -15.0
 
 #define FV_MAX_ANGLE            100.0
-#define FV_MIN_ANGLE            100.0
+#define FV_MIN_ANGLE            -100.0
 
 uint16_t modelDelay;            //не менять тип (задержка в циклах systick)
 
@@ -102,8 +102,8 @@ void sensor_initialisation(void)
         sensor[FV].gpioDataPin = GPIO_PIN_14; 
         sensor[FV].gpioClkPort = GPIOB;
         sensor[FV].gpioClkPin = GPIO_PIN_15;     
-        sensor[FV].bitCount = 13;
-        sensor[FV].needReadFaultBit = true;        
+        sensor[FV].bitCount = 14;
+        sensor[FV].needReadFaultBit = false;        
 }
 
 
@@ -126,17 +126,19 @@ void drive_initialisation(void)
 //speed = 127 => скорость СПШ = 0 
 void azModel(void)
 {
-int16_t velosity, maxVelosity;    
+int16_t velosity, _velosity, maxVelosity, minVelosity;    
         drive[AZ].position = sensor[AZ].code;
         if(in.msg.mode & 0x01)
         {
                 if((in.msg.speedH & 0x20) && (sensor[AZ].fault == false))
                 {
+                        maxVelosity = (in.msg.speedL & 0x0F) * 10;
+                        minVelosity = (in.msg.speedL & 0x0F) * (-10);
                         drive[AZ].target =  in.msg.azimutL | (in.msg.azimutH << 8);
-                        maxVelosity = drive[AZ].target - drive[AZ].position;
-                        if(maxVelosity > 100) maxVelosity = 100;
-                        if(maxVelosity < -100) maxVelosity = -100; 
-                        velosity = 127 + (uint8_t)maxVelosity;
+                        _velosity = drive[AZ].target - drive[AZ].position;
+                        if(_velosity > maxVelosity) _velosity = maxVelosity;
+                        if(_velosity < minVelosity) _velosity = minVelosity; 
+                        velosity = 127 + (uint8_t)_velosity;
                 }
                 else
                         velosity = 127;
@@ -163,17 +165,19 @@ int16_t velosity, maxVelosity;
 
 void umModel(void)
 {
-int16_t velosity, maxVelosity;  
+int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[UM].position = sensor[UM].code;
         if(in.msg.mode & 0x02)
         {
                 if((in.msg.speedH & 0x40) && (sensor[UM].fault == false))
                 {
+                        maxVelosity = (in.msg.speedL >> 4) * 10;
+                        minVelosity = (in.msg.speedL >> 4) * (-10);
                         drive[UM].target =  in.msg.angleL | (in.msg.angleH << 8);
-                        maxVelosity = drive[UM].target - drive[UM].position;
-                        if(maxVelosity > 100) maxVelosity = 100;
-                        if(maxVelosity < -100) maxVelosity = -100; 
-                        velosity = 127 + (uint8_t)maxVelosity;
+                        _velosity = drive[UM].target - drive[UM].position;
+                        if(_velosity > maxVelosity) _velosity = maxVelosity;
+                        if(_velosity < minVelosity) _velosity = minVelosity; 
+                        velosity = 127 + (uint8_t)_velosity;
                 }
                 else
                         velosity = 127;                        
