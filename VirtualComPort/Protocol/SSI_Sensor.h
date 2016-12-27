@@ -11,8 +11,10 @@ typedef struct
         double angle;
         uint16_t code;
         bool fault;
+        bool needInvert;
 //settings
         uint8_t bitCount;
+        uint16_t mask;
         bool needReadFaultBit;
         GPIO_TypeDef* gpioClkPort;
         uint16_t gpioClkPin;

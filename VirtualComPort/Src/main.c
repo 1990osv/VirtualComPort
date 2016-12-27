@@ -99,14 +99,14 @@ void print_drive_status(char *str, Privod *d, SSIsensor *s)
         else{
         //|AZ ###.## LIMIT    +|
                 if(d->limit == 1){
-                        sprintf(str,"LIMIT    +"); lcd_PrintC(str);
+                        sprintf(str,"LIMIT  +"); lcd_PrintC(str);
                 }
                 else if(d->limit == 2){
-                        sprintf(str,"LIMIT    -"); lcd_PrintC(str);
+                        sprintf(str,"LIMIT  -"); lcd_PrintC(str);
                 }
         //|AZ ###.## SPEED ####|                
                 else {
-                        sprintf(str,"SPEED %4d",127-d->speed); lcd_PrintC(str);
+                        sprintf(str,"SP   %4d",127-d->speed); lcd_PrintC(str);
                 }
                         
         }
