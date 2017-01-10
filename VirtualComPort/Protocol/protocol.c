@@ -93,7 +93,6 @@ void sensor_initialisation(void)
         sensor[AZ].needInvert =false;
         sensor[AZ].mask = 0xFFFF;
         
-        
         sensor[UM].gpioDataPort = GPIOD;
         sensor[UM].gpioDataPin = GPIO_PIN_8; 
         sensor[UM].gpioClkPort = GPIOD;
@@ -111,7 +110,6 @@ void sensor_initialisation(void)
         sensor[FV].needReadFaultBit = false;        
         sensor[FV].needInvert =false;
         sensor[FV].mask = 0x3FFF;
-
 }
 
 
@@ -119,19 +117,19 @@ void drive_initialisation(void)
 {
         drive[AZ].canAddr = 1;
         drive[AZ].noAnswerCnt = 0;
-        drive[AZ].speed = 127;
+        drive[AZ].speed = ZERO_SPEED;
         
         drive[UM].canAddr = 2;
         drive[UM].noAnswerCnt = 0;
-        drive[UM].speed = 127;
+        drive[UM].speed = ZERO_SPEED;
         
         drive[FV].canAddr = 3;
         drive[FV].noAnswerCnt = 0;
-        drive[FV].speed = 127;
+        drive[FV].speed = ZERO_SPEED;
 }
 
 //скорость по интерфейсу приходит как значение [1..10]
-//speed = 127 => скорость СПШ = 0 
+//speed = ZERO_SPEED(127) => скорость СПШ = 0 
 void azModel(void)
 {
 int16_t velosity, _velosity, maxVelosity, minVelosity;    
@@ -146,23 +144,23 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
                         _velosity = drive[AZ].target - drive[AZ].position;
                         if(_velosity > maxVelosity) _velosity = maxVelosity;
                         if(_velosity < minVelosity) _velosity = minVelosity; 
-                        velosity = 127 + (uint8_t)_velosity;
+                        velosity = ZERO_SPEED + (uint8_t)_velosity;
                 }
                 else
-                        velosity = 127;
+                        velosity = ZERO_SPEED;
         }
         else
         {
                 if(in.msg.mode & 0x04)
-                        velosity = 127 + (in.msg.speedL & 0x0F) * 10;
+                        velosity = ZERO_SPEED + (in.msg.speedL & 0x0F) * 10;
                 else if(in.msg.mode & 0x08)
-                        velosity = 127 - (in.msg.speedL & 0x0F) * 10;
+                        velosity = ZERO_SPEED - (in.msg.speedL & 0x0F) * 10;
                 else 
-                        velosity = 127;
+                        velosity = ZERO_SPEED;
         }
 #ifdef DEBUG_NOT_CONNECT_ENCODER
         if( (azSensor.angle >= AZ_MAX_ANGLE) || (azSensor.angle <= AZ_MIN_ANGLE) )
-                velosity = 127;
+                velosity = ZERO_SPEED;
 #endif
         drive[AZ].speed = velosity;
         out.msg.azimutL = drive[AZ].position & 0xFF;
@@ -185,27 +183,27 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
                         _velosity = drive[UM].target - drive[UM].position;
                         if(_velosity > maxVelosity) _velosity = maxVelosity;
                         if(_velosity < minVelosity) _velosity = minVelosity; 
-                        velosity = 127 + (uint8_t)_velosity;
+                        velosity = ZERO_SPEED + (uint8_t)_velosity;
                 }
                 else
-                        velosity = 127;                        
+                        velosity = ZERO_SPEED;                        
         }
         else
         {
                 if(in.msg.mode & 0x10)
                 {
-                        velosity = 127 + (in.msg.speedL >> 4) * 10;
+                        velosity = ZERO_SPEED + (in.msg.speedL >> 4) * 10;
                 }
                 else if(in.msg.mode & 0x20)
                 {
-                        velosity = 127 - (in.msg.speedL >> 4) * 10;
+                        velosity = ZERO_SPEED - (in.msg.speedL >> 4) * 10;
                 }
                 else
-                        velosity = 127;
+                        velosity = ZERO_SPEED;
         }
 #ifdef DEBUG_NOT_CONNECT_ENCODER        
         if( (umSensor.angle >= UM_MAX_ANGLE) || (umSensor.angle <= UM_MIN_ANGLE) )
-                velosity = 127;
+                velosity = ZERO_SPEED;
 #endif
         drive[UM].speed = velosity;
         
@@ -222,17 +220,17 @@ int16_t velosity;
         drive[FV].position = sensor[FV].code;
         if(in.msg.mode & 0x40)
         {
-                velosity = 127 + (in.msg.speedH & 0x0F) * 10;
+                velosity = ZERO_SPEED + (in.msg.speedH & 0x0F) * 10;
         }
         else if(in.msg.mode & 0x80)
         {
-                velosity = 127 - (in.msg.speedH & 0x0F) * 10;
+                velosity = ZERO_SPEED - (in.msg.speedH & 0x0F) * 10;
         }
         else
-                velosity = 127;
+                velosity = ZERO_SPEED;
 #ifdef DEBUG_NOT_CONNECT_ENCODER
         if( (fvSensor.angle >= FV_MAX_ANGLE) || (fvSensor.angle <= FV_MIN_ANGLE) )
-                velosity = 127;
+                velosity = ZERO_SPEED;
 #endif
         drive[FV].speed = velosity;
         
@@ -256,9 +254,9 @@ void model(void)
                 fvModel();
         }
         else{
-                drive[AZ].speed = 127;
-                drive[UM].speed = 127;
-                drive[FV].speed = 127;
+                drive[AZ].speed = ZERO_SPEED;
+                drive[UM].speed = ZERO_SPEED;
+                drive[FV].speed = ZERO_SPEED;
         }
 }
 

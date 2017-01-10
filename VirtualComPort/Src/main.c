@@ -106,7 +106,7 @@ void print_drive_status(char *str, Privod *d, SSIsensor *s)
                 }
         //|AZ ###.## SPEED ####|                
                 else {
-                        sprintf(str,"SP   %4d",127-d->speed); lcd_PrintC(str);
+                        sprintf(str,"SP   %4d",ZERO_SPEED-d->speed); lcd_PrintC(str);
                 }
                         
         }

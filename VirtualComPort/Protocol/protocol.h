@@ -12,6 +12,9 @@
 #define DRIVE_NOT_CONNECT       0x10
 #define SENSOR_ERROR            0x20
 
+
+#define ZERO_SPEED              127
+
 typedef struct {
         uint8_t canAddr;
         uint8_t noAnswerCnt;
