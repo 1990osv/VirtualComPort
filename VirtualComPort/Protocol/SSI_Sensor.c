@@ -47,11 +47,9 @@ bool readValue(SSIsensor* s)
 {
         uint8_t bitCount;
         uint16_t u16result;
-        uint16_t sensorMask; // mask equal bitCount
         GPIO_PinState pinState;
 
         u16result = 0;
-        sensorMask = 0;
 
         HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_RESET);
         SSI_delay_01us(5);
@@ -75,13 +73,12 @@ bool readValue(SSIsensor* s)
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_SET);
                 SSI_delay_01us(5);
                 
+                u16result = (u16result << 1);                
                 if ( pinState != GPIO_PIN_RESET)
                 {
                         u16result = u16result | 0x01;
                 }
-                sensorMask = sensorMask | 0x01;
-                sensorMask = (sensorMask << 1);
-                u16result = (u16result << 1);
+
         }
         s->code = u16result & s->mask;
         s->angle = (double)s->code * (360.0 / (double)s->mask) - 180.0;
