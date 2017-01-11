@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include "stm32f4xx_hal.h"
 
+
+
 typedef struct
 {
 //out parameters
@@ -25,5 +27,7 @@ typedef struct
 
 //return true or false sensor state
 bool readValue(SSIsensor* s);
+
+void DWT_Init(void);
 
 #endif /* __SSI_SENSOR_H */

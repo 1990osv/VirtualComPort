@@ -84,6 +84,7 @@ static uint8_t crcOutCompute(uint8_t *data, uint8_t len);
 
 void sensor_initialisation(void)
 {
+        DWT_Init();
         sensor[AZ].gpioDataPort = GPIOD;
         sensor[AZ].gpioDataPin = GPIO_PIN_10; 
         sensor[AZ].gpioClkPort = GPIOD;

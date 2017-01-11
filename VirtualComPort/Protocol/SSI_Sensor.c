@@ -3,34 +3,78 @@
 #include <stdint.h>
 #include "SSI_Sensor.h"
 
+#define    DWT_CYCCNT    *(volatile unsigned long *)0xE0001004
+#define    DWT_CONTROL   *(volatile unsigned long *)0xE0001000
+#define    SCB_DEMCR     *(volatile unsigned long *)0xE000EDFC
+
+void DWT_Init(void)
+{
+        //разрешаем использовать счётчик
+        SCB_DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+        //обнуляем значение счётного регистра
+        DWT_CYCCNT  = 0;
+        //запускаем счётчик
+        DWT_CONTROL |= DWT_CTRL_CYCCNTENA_Msk; 
+}
+
+static __inline uint32_t delta(uint32_t t0, uint32_t t1)
+{
+        return (t1 - t0); 
+}
+void SSI_delay_us(uint32_t us)
+{
+        uint32_t t0 =  DWT->CYCCNT;
+        uint32_t us_count_tic =  us * (SystemCoreClock/1000000);
+        while (delta(t0, DWT->CYCCNT) < us_count_tic) ;
+}
+
+void SSI_delay_01us(uint32_t us)
+{
+        uint32_t t0 =  DWT->CYCCNT;
+        uint32_t us_count_tic =  us * (SystemCoreClock/10000000);
+        while (delta(t0, DWT->CYCCNT) < us_count_tic) ;
+}
+
+GPIO_PinState pinState;
+
+
 /**
   * @brief Read SSI sensor value
-  * @param  
-  * @retval
+  * @param  none
+  * @retval none
   */
 bool readValue(SSIsensor* s)
 {
         uint8_t bitCount;
         uint16_t u16result;
         uint16_t sensorMask; // mask equal bitCount
-        int16_t d;
         GPIO_PinState pinState;
-        
+
         u16result = 0;
         sensorMask = 0;
+
+        HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_RESET);
+        SSI_delay_01us(5);
+        //pinState = HAL_GPIO_ReadPin(s->gpioDataPort, s->gpioDataPin);
+        HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_SET);
+        SSI_delay_01us(5);
+        
         if(s->needReadFaultBit)
         {
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_RESET);
-                d=50;while(d>0)d-=1;
+                SSI_delay_01us(5);
                 s->fault = HAL_GPIO_ReadPin(s->gpioDataPort, s->gpioDataPin);
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_SET);
+                SSI_delay_01us(5);
         }
-        for (bitCount = 0; bitCount <= s->bitCount; bitCount++)
+        for (bitCount = 0; bitCount < s->bitCount; bitCount++)
         {
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_RESET);
-                d=50;while(d>0)d-=1;
+                SSI_delay_01us(5);
                 pinState = HAL_GPIO_ReadPin(s->gpioDataPort, s->gpioDataPin);
-                HAL_GPIO_WritePin(s->gpioDataPort, s->gpioClkPin,GPIO_PIN_SET);
+                HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_SET);
+                SSI_delay_01us(5);
+                
                 if ( pinState != GPIO_PIN_RESET)
                 {
                         u16result = u16result | 0x01;

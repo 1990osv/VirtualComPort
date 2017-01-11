@@ -163,7 +163,12 @@ void print_system_status(char *str)
 int main(void)
 {
         /* USER CODE BEGIN 1 */
-
+        __disable_irq();
+        
+        sensor_initialisation();
+        drive_initialisation();
+        
+        __enable_irq();
         /* USER CODE END 1 */
 
         /* MCU Configuration----------------------------------------------------------*/
@@ -183,12 +188,7 @@ int main(void)
 
         /* USER CODE BEGIN 2 */
         lcd_initialisation();
-        __disable_irq();
-        
-        sensor_initialisation();
-        drive_initialisation();
-        
-        __enable_irq();
+
         /* USER CODE END 2 */
         
         /* Infinite loop */
