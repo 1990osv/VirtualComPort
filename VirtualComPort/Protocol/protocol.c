@@ -291,6 +291,7 @@ void transfer(void)
                 if(lastCiclCount != in.msg.ciclCount) // приняли новое сообщение от компьютера
                 {
                         alarmStopCnt = 0;
+                        alarmStop = false;
                         lastCiclCount = in.msg.ciclCount;
                         out.msg.ciclCount = in.msg.ciclCount;
 

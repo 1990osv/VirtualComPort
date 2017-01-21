@@ -89,22 +89,22 @@ void lcd_PrintSpase(unsigned char n)
 void print_drive_status(char *str, Privod *d, SSIsensor *s)
 {
         //|____________________|
-        //|AZ ###.##         ##|
+        //|AZ -###.##        ##|
         sprintf(str,"%7.2f ", s->angle); lcd_PrintC(str);
         
-        //|AZ ###.## ERROR 0x##|
+        //|AZ -###.## CODE 0x##|
         if(d->status){
                 sprintf(str,"CODE %#02x", d->status); lcd_PrintC(str);
         }
         else{
-        //|AZ ###.## LIMIT    +|
+        //|AZ -###.## LIMIT   +|
                 if(d->limit == 1){
-                        sprintf(str,"LIMIT  +"); lcd_PrintC(str);
+                        sprintf(str,"LIMIT   +"); lcd_PrintC(str);
                 }
                 else if(d->limit == 2){
-                        sprintf(str,"LIMIT  -"); lcd_PrintC(str);
+                        sprintf(str,"LIMIT   -"); lcd_PrintC(str);
                 }
-        //|AZ ###.## SPEED ####|                
+        //|AZ -###.## SP   ####|                
                 else {
                         sprintf(str,"SP   %4d",ZERO_SPEED-d->speed); lcd_PrintC(str);
                 }
