@@ -52,26 +52,26 @@ bool readValue(SSIsensor* s)
         u16result = 0;
 
         HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_RESET);
-        SSI_delay_01us(5);
+        SSI_delay_01us(3);
         //pinState = HAL_GPIO_ReadPin(s->gpioDataPort, s->gpioDataPin);
         HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_SET);
-        SSI_delay_01us(5);
+        SSI_delay_01us(3);
         
         if(s->needReadFaultBit)
         {
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_RESET);
-                SSI_delay_01us(5);
+                SSI_delay_01us(3);
                 s->fault = HAL_GPIO_ReadPin(s->gpioDataPort, s->gpioDataPin);
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_SET);
-                SSI_delay_01us(5);
+                SSI_delay_01us(3);
         }
         for (bitCount = 0; bitCount < s->bitCount; bitCount++)
         {
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_RESET);
-                SSI_delay_01us(5);
+                SSI_delay_01us(3);
                 pinState = HAL_GPIO_ReadPin(s->gpioDataPort, s->gpioDataPin);
                 HAL_GPIO_WritePin(s->gpioClkPort, s->gpioClkPin,GPIO_PIN_SET);
-                SSI_delay_01us(5);
+                SSI_delay_01us(3);
                 
                 u16result = (u16result << 1);                
                 if ( pinState != GPIO_PIN_RESET)

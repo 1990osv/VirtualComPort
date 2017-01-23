@@ -99,7 +99,7 @@ void sensor_initialisation(void)
         sensor[UM].gpioClkPort = GPIOD;
         sensor[UM].gpioClkPin = GPIO_PIN_9;     
         sensor[UM].bitCount = 16;
-        sensor[UM].needReadFaultBit = false;
+        sensor[UM].needReadFaultBit = true;
         sensor[UM].needInvert =true;
         sensor[UM].mask = 0xFFFF;
         
@@ -107,7 +107,7 @@ void sensor_initialisation(void)
         sensor[FV].gpioDataPin = GPIO_PIN_14; 
         sensor[FV].gpioClkPort = GPIOB;
         sensor[FV].gpioClkPin = GPIO_PIN_15;     
-        sensor[FV].bitCount = 13;
+        sensor[FV].bitCount = 14;
         sensor[FV].needReadFaultBit = false;        
         sensor[FV].needInvert =false;
         sensor[FV].mask = 0x3FFF;
