@@ -40,8 +40,8 @@ bool readValue(SSIsensor* s)
                 u16result = (u16result << 1);
         }
         s->code = u16result & s->mask;
-        s->angle = (double)s->code * (360.0 / (double)s->mask) - 180.0;
         if(s->needInvert)
-                s->angle = s->angle *(-1);
+                s->code = ~(s->code);
+        s->angle = (double)s->code * (360.0 / (double)s->mask) - 180.0;
         return s->fault;
 }

@@ -8,7 +8,7 @@ my CAN address  0
 
 
 
-Программа СПШ:
+Программа СПШ Азимут:
 
 IF(CAN_RECV(0,21,X))
   IF(X>0)
@@ -27,15 +27,18 @@ IF(CAN_RECV(0,21,X))
   SEND(5,21,Y)
 ENDIF
 IF(up2>0)
-  IF(P_IN.0=0)
-    up2=0
-  ENDIF
-ENDIF
-IF(up2<0)
   IF(P_IN.1=0)
     up2=0
   ENDIF
 ENDIF
-W=up2
+IF(up2<0)
+  IF(P_IN.0=0)
+    up2=0
+  ENDIF
+ENDIF
+Z=0
+Y=up2*6
+W=Z-Y
 REPEAT
+
 

@@ -138,7 +138,8 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[AZ].position = sensor[AZ].code;
         if(in.msg.mode & 0x01)
         {
-                if((in.msg.speedH & 0x20) && (sensor[AZ].fault == false))
+                out.msg.stateL |= 0x01;
+                if((in.msg.speedH & 0x20))// && (sensor[AZ].fault == false))
                 {
                         maxVelosity = (in.msg.speedL & 0x0F) * 10;
                         minVelosity = (in.msg.speedL & 0x0F) * (-10);
@@ -153,6 +154,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         }
         else
         {
+                out.msg.stateL &= ~(0x01);
                 if(in.msg.mode & 0x04)
                         velosity = 127 + (in.msg.speedL & 0x0F) * 10;
                 else if(in.msg.mode & 0x08)
@@ -167,7 +169,22 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[AZ].speed = velosity;
         out.msg.azimutL = drive[AZ].position & 0xFF;
         out.msg.azimutH = (drive[AZ].position >> 8) & 0xFF;
-        
+        if(drive[AZ].status)        
+        {
+                out.msg.stateL |= (0x0C);
+        }
+        else 
+        {
+                out.msg.stateL &= ~(0x0C);
+                if (velosity > 127)
+                {
+                        out.msg.stateL |= (0x04);
+                }
+                else if (velosity < 127)
+                {
+                        out.msg.stateL |= (0x08);
+                }
+        }
 }
 
 
@@ -177,7 +194,8 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[UM].position = sensor[UM].code;
         if(in.msg.mode & 0x02)
         {
-                if((in.msg.speedH & 0x40) && (sensor[UM].fault == false))
+                out.msg.stateL |= 0x02;                
+                if((in.msg.speedH & 0x40))// && (sensor[UM].fault == false))
                 {
                         maxVelosity = (in.msg.speedL >> 4) * 10;
                         minVelosity = (in.msg.speedL >> 4) * (-10);
@@ -192,6 +210,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         }
         else
         {
+                out.msg.stateL &= ~(0x02);
                 if(in.msg.mode & 0x10)
                 {
                         velosity = 127 + (in.msg.speedL >> 4) * 10;
@@ -208,23 +227,37 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
                 velosity = 127;
 #endif
         drive[UM].speed = velosity;
-        
-        
+
         out.msg.angleL = drive[UM].position & 0xFF;
         out.msg.angleH = (drive[UM].position >> 8) & 0xFF;
         
-       
+        if(drive[UM].status)        
+        {
+                out.msg.stateL |= (0x30);
+        }
+        else 
+        {
+                out.msg.stateL &= ~(0x30);
+                if (velosity > 127)
+                {
+                        out.msg.stateL |= (0x10);
+                }
+                else if (velosity < 127)
+                {
+                        out.msg.stateL |= (0x20);
+                }
+        }       
 }
 
 void fvModel(void)
 {
 int16_t velosity;
         drive[FV].position = sensor[FV].code;
-        if(in.msg.mode & 0x40)
+        if(in.msg.mode & 0x80)
         {
                 velosity = 127 + (in.msg.speedH & 0x0F) * 10;
         }
-        else if(in.msg.mode & 0x80)
+        else if(in.msg.mode & 0x40)
         {
                 velosity = 127 - (in.msg.speedH & 0x0F) * 10;
         }
@@ -238,7 +271,22 @@ int16_t velosity;
         
         out.msg.phazeL = drive[FV].position & 0xFF;
         out.msg.phazeH = (drive[FV].position >> 8) & 0xFF;
-
+        if(drive[FV].status)        
+        {
+                out.msg.stateL |= (0xC0);
+        }
+        else 
+        {
+                out.msg.stateL &= ~(0xC0);
+                if (velosity > 127)
+                {
+                        out.msg.stateL |= (0x40);
+                }
+                else if (velosity < 127)
+                {
+                        out.msg.stateL |= (0x80);
+                }
+        }
 }
 
 
@@ -292,6 +340,7 @@ void transfer(void)
                 if(lastCiclCount != in.msg.ciclCount) // приняли новое сообщение от компьютера
                 {
                         alarmStopCnt = 0;
+                        alarmStop = 0;
                         lastCiclCount = in.msg.ciclCount;
                         out.msg.ciclCount = in.msg.ciclCount;
 
@@ -312,14 +361,14 @@ void transfer(void)
                         }
                         out.msg.crc = crcOutCompute(out.buf,OUT_MSG_SIZE - 1);
                         
-                        out.msg.stateL &= ~(0x07); // обнулили статус готовности всех 3-х приводов
+                        out.msg.stateH &= ~(0x07); // обнулили статус готовности всех 3-х приводов
                         
                         if(drive[AZ].status)
-                                out.msg.stateL |= 0x01;
+                                out.msg.stateH |= 0x01;
                         if(drive[UM].status)
-                                out.msg.stateL |= 0x02;
+                                out.msg.stateH |= 0x02;
                         if(drive[FV].status)
-                                out.msg.stateL |= 0x04;
+                                out.msg.stateH |= 0x04;
                         
                         out.msg.stateH = drive[AZ].limit | 
                                         (drive[UM].limit << 2)| 
@@ -334,7 +383,7 @@ uint8_t crcCompute(uint8_t *data, uint8_t len)
 {
         volatile uint8_t i, crcComp;
        
-        crcComp = data[0] - 1;
+        crcComp = data[0];
         for (i = 1; i < len; i++)
         {
                 crcComp ^= data[i];
