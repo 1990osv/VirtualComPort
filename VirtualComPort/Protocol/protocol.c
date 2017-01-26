@@ -141,7 +141,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[AZ].position = sensor[AZ].code;
         if(in.msg.mode & 0x01)
         {
-                //out.msg.stateL |= 0x01;
+                out.msg.stateL |= 0x01;
                 if((in.msg.speedH & 0x20))// && (sensor[AZ].fault == false))
                 {
                         maxVelosity = (in.msg.speedL & 0x0F) * 10;
@@ -150,14 +150,14 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
                         _velosity = drive[AZ].target - drive[AZ].position;
                         if(_velosity > maxVelosity) _velosity = maxVelosity;
                         if(_velosity < minVelosity) _velosity = minVelosity; 
-                        velosity = 127 + (uint8_t)_velosity;
+                        velosity = 127 + _velosity;
                 }
                 else
                         velosity = 127;
         }
         else
         {
-                //out.msg.stateL &= ~(0x01);
+                out.msg.stateL &= ~(0x01);
                 if(in.msg.mode & 0x04)
                         velosity = 127 + (in.msg.speedL & 0x0F) * 10;
                 else if(in.msg.mode & 0x08)
@@ -174,11 +174,13 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         out.msg.azimutH = (drive[AZ].position >> 8) & 0xFF;
         if(drive[AZ].status)        
         {
+                out.msg.stateH |= (0x01);  
                 out.msg.stateL |= (0x0C);
         }
         else 
         {
-                out.msg.stateL &= ~(0x0C);
+                out.msg.stateH &= ~(0x01); 
+                out.msg.stateL &= ~(0x0C);                
                 if (velosity > 127)
                 {
                         out.msg.stateL |= (0x04);
@@ -195,9 +197,10 @@ void umModel(void)
 {
 int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[UM].position = sensor[UM].code;
+
         if(in.msg.mode & 0x02)
         {
-                //out.msg.stateL |= 0x02;                
+                out.msg.stateL |= 0x02;                
                 if((in.msg.speedH & 0x40))// && (sensor[UM].fault == false))
                 {
                         maxVelosity = (in.msg.speedL >> 4) * 10;
@@ -206,14 +209,14 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
                         _velosity = drive[UM].target - drive[UM].position;
                         if(_velosity > maxVelosity) _velosity = maxVelosity;
                         if(_velosity < minVelosity) _velosity = minVelosity; 
-                        velosity = 127 + (uint8_t)_velosity;
+                        velosity = 127 + _velosity;
                 }
                 else
                         velosity = 127;                        
         }
         else
         {
-                //out.msg.stateL &= ~(0x02);
+                out.msg.stateL &= ~(0x02);
                 if(in.msg.mode & 0x10)
                 {
                         velosity = 127 + (in.msg.speedL >> 4) * 10;
@@ -236,18 +239,20 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         
         if(drive[UM].status)        
         {
+                out.msg.stateH |= (0x02);
                 out.msg.stateL |= (0x30);
         }
         else 
         {
+                out.msg.stateH &= ~(0x02);                
                 out.msg.stateL &= ~(0x30);
                 if (velosity > 127)
                 {
-                        out.msg.stateL |= (0x10);
+                        out.msg.stateL |= (0x10);                        
                 }
                 else if (velosity < 127)
                 {
-                        out.msg.stateL |= (0x20);
+                        out.msg.stateL |= (0x20);                        
                 }
         }       
 }
@@ -277,9 +282,11 @@ int16_t velosity;
         if(drive[FV].status)        
         {
                 out.msg.stateL |= (0xC0);
+                out.msg.stateH |= (0x04);
         }
         else 
         {
+                out.msg.stateH &= ~(0x04);
                 out.msg.stateL &= ~(0xC0);
                 if (velosity > 127)
                 {
@@ -328,22 +335,22 @@ void model(void)
 
 void setDataFaultFlag(void)
 {
-        out.msg.stateL |= (1<<(INTERFACE_STATE));
+        out.msg.stateH |= (1<<(INTERFACE_STATE));
 }
 
 void resetDataFaultFlag(void)
 {
-        out.msg.stateL &= (~(1<<(INTERFACE_STATE)));
+        out.msg.stateH &= (~(1<<(INTERFACE_STATE)));
 }
 
 void setDataFaultCntFlag(void)
 {
-        out.msg.stateL |= (1<<(INTERFACE_STATE_CNT));
+        out.msg.stateH |= (1<<(INTERFACE_STATE_CNT));
 }
 
 void resetDataFaultCntFlag(void)
 {
-        out.msg.stateL &= (~(1<<(INTERFACE_STATE_CNT)));
+        out.msg.stateH &= (~(1<<(INTERFACE_STATE_CNT)));
 }
 
 void transfer(void)
@@ -353,14 +360,13 @@ void transfer(void)
         len = IN_MSG_SIZE;
         if (CDC_Receive_FS(in.buf, &len) == USBD_OK)
         {
-                inMsgCrc = crcCompute(in.buf, IN_MSG_SIZE - 1);
                 if(lastCiclCount != in.msg.ciclCount) // приняли новое сообщение от компьютера
                 {
                         alarmStopCnt = 0;
-
+                        inMsgCrc = crcCompute(in.buf, IN_MSG_SIZE - 1);
                         lastCiclCount = in.msg.ciclCount;
                         out.msg.ciclCount = in.msg.ciclCount;
-
+                        in.msg.ciclCount--; //чтобы принимать повторные сообщения
                         if ( inMsgCrc == in.msg.crc )
                         {
                                 alarmStop = 0;
