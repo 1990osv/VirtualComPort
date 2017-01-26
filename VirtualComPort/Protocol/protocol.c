@@ -67,7 +67,7 @@ union InMsg {
 union OutMsg {
         uint8_t buf[OUT_MSG_SIZE];
         struct StructOutMsg msg;
-} out;
+} out, out2;
 
 SSIsensor sensor[AXIS_COUNT];
 
@@ -81,6 +81,9 @@ static void setDataFaultCntFlag(void);
 static void resetDataFaultCntFlag(void);
 static uint8_t crcCompute(uint8_t *data, uint8_t len);
 static uint8_t crcOutCompute(uint8_t *data, uint8_t len);
+
+
+
 
 void sensor_initialisation(void)
 {
@@ -138,7 +141,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[AZ].position = sensor[AZ].code;
         if(in.msg.mode & 0x01)
         {
-                out.msg.stateL |= 0x01;
+                //out.msg.stateL |= 0x01;
                 if((in.msg.speedH & 0x20))// && (sensor[AZ].fault == false))
                 {
                         maxVelosity = (in.msg.speedL & 0x0F) * 10;
@@ -154,7 +157,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         }
         else
         {
-                out.msg.stateL &= ~(0x01);
+                //out.msg.stateL &= ~(0x01);
                 if(in.msg.mode & 0x04)
                         velosity = 127 + (in.msg.speedL & 0x0F) * 10;
                 else if(in.msg.mode & 0x08)
@@ -194,7 +197,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         drive[UM].position = sensor[UM].code;
         if(in.msg.mode & 0x02)
         {
-                out.msg.stateL |= 0x02;                
+                //out.msg.stateL |= 0x02;                
                 if((in.msg.speedH & 0x40))// && (sensor[UM].fault == false))
                 {
                         maxVelosity = (in.msg.speedL >> 4) * 10;
@@ -210,7 +213,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
         }
         else
         {
-                out.msg.stateL &= ~(0x02);
+                //out.msg.stateL &= ~(0x02);
                 if(in.msg.mode & 0x10)
                 {
                         velosity = 127 + (in.msg.speedL >> 4) * 10;
@@ -280,11 +283,11 @@ int16_t velosity;
                 out.msg.stateL &= ~(0xC0);
                 if (velosity > 127)
                 {
-                        out.msg.stateL |= (0x40);
+                        out.msg.stateL |= (0x80);
                 }
                 else if (velosity < 127)
                 {
-                        out.msg.stateL |= (0x80);
+                        out.msg.stateL |= (0x40);
                 }
         }
 }
@@ -308,6 +311,19 @@ void model(void)
                 drive[UM].speed = 127;
                 drive[FV].speed = 127;
         }
+ 
+        out.msg.driveState &= ~(0x07); // обнулили статус ограничений по трем осям
+                
+//        if(drive[AZ].status)
+//                out.msg.driveState |= 0x01;
+//        if(drive[UM].status)
+//                out.msg.driveState |= 0x02;
+//        if(drive[FV].status)
+//                out.msg.driveState |= 0x04;
+        
+        out.msg.driveState = drive[AZ].limit | 
+                        (drive[UM].limit << 2)| 
+                        (drive[FV].limit << 4);        
 }
 
 void setDataFaultFlag(void)
@@ -332,20 +348,22 @@ void resetDataFaultCntFlag(void)
 
 void transfer(void)
 {
-        uint32_t Len = IN_MSG_SIZE;
+        uint32_t len, i;
         uint8_t inMsgCrc;     //контрольная сумма принятого сообщения
-        if (CDC_Receive_FS(in.buf, &Len) == USBD_OK)
+        len = IN_MSG_SIZE;
+        if (CDC_Receive_FS(in.buf, &len) == USBD_OK)
         {
                 inMsgCrc = crcCompute(in.buf, IN_MSG_SIZE - 1);
                 if(lastCiclCount != in.msg.ciclCount) // приняли новое сообщение от компьютера
                 {
                         alarmStopCnt = 0;
-                        alarmStop = 0;
+
                         lastCiclCount = in.msg.ciclCount;
                         out.msg.ciclCount = in.msg.ciclCount;
 
                         if ( inMsgCrc == in.msg.crc )
                         {
+                                alarmStop = 0;
                                 resetDataFaultFlag();
                                 resetDataFaultCntFlag();
                                 cntErrorCRC = 0;
@@ -353,28 +371,17 @@ void transfer(void)
                         else
                         {
                                 setDataFaultFlag();
-                                cntErrorCRC++;
+                                if(++cntErrorCRC > 20){
+                                        alarmStop = true;
+                                        setDataFaultCntFlag();
+                                }
                         }
-                        if(cntErrorCRC>20){
-                                alarmStop = true;
-                                setDataFaultCntFlag();
-                        }
+                        __disable_irq();                        
                         out.msg.crc = crcOutCompute(out.buf,OUT_MSG_SIZE - 1);
-                        
-                        out.msg.stateH &= ~(0x07); // обнулили статус готовности всех 3-х приводов
-                        
-                        if(drive[AZ].status)
-                                out.msg.stateH |= 0x01;
-                        if(drive[UM].status)
-                                out.msg.stateH |= 0x02;
-                        if(drive[FV].status)
-                                out.msg.stateH |= 0x04;
-                        
-                        out.msg.stateH = drive[AZ].limit | 
-                                        (drive[UM].limit << 2)| 
-                                        (drive[FV].limit << 4);
-                        
-                        CDC_Transmit_FS(out.buf, OUT_MSG_SIZE);        
+                        for(i=0;i<OUT_MSG_SIZE;++i)
+                        out2.buf[i]=out.buf[i];
+                        CDC_Transmit_FS(out2.buf, OUT_MSG_SIZE);        
+                        __enable_irq();
                 }
         }
 }

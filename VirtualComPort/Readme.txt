@@ -41,4 +41,34 @@ Y=up2*6
 W=Z-Y
 REPEAT
 
+Фазавращатель:
+
+IF(CAN_RECV(0,21,X))
+  IF(X>0)
+    Z=127
+    up1=X-Z
+    Z=up1
+    X=0
+    up2=X-Z
+  ELSE
+    up2=0
+  ENDIF
+  Y=dd11
+  Y=Y*16
+  Z=PORT&15
+  Y=Y|Z
+  SEND(5,21,Y)
+ENDIF
+IF(up2>0)
+  IF(P_IN.1=0)
+    up2=0
+  ENDIF
+ENDIF
+IF(up2<0)
+  IF(P_IN.0=0)
+    up2=0
+  ENDIF
+ENDIF
+W=up2*6
+REPEAT
 
