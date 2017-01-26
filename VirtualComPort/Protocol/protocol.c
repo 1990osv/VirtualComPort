@@ -148,9 +148,16 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
                         minVelosity = (in.msg.speedL & 0x0F) * (-10);
                         drive[AZ].target =  in.msg.azimutL | (in.msg.azimutH << 8);
                         _velosity = drive[AZ].target - drive[AZ].position;
-                        if(_velosity > maxVelosity) _velosity = maxVelosity;
-                        if(_velosity < minVelosity) _velosity = minVelosity; 
-                        velosity = 127 + _velosity;
+                        if(abs(_velosity)<=1)
+                        {
+                                velosity = 127;
+                        }
+                        else
+                        {
+                                if(_velosity > maxVelosity) _velosity = maxVelosity;
+                                if(_velosity < minVelosity) _velosity = minVelosity; 
+                                velosity = 127 + _velosity;
+                        }
                 }
                 else
                         velosity = 127;
@@ -203,13 +210,21 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
                 out.msg.stateL |= 0x02;                
                 if((in.msg.speedH & 0x40))// && (sensor[UM].fault == false))
                 {
+                        
                         maxVelosity = (in.msg.speedL >> 4) * 10;
                         minVelosity = (in.msg.speedL >> 4) * (-10);
                         drive[UM].target =  in.msg.angleL | (in.msg.angleH << 8);
                         _velosity = drive[UM].target - drive[UM].position;
-                        if(_velosity > maxVelosity) _velosity = maxVelosity;
-                        if(_velosity < minVelosity) _velosity = minVelosity; 
-                        velosity = 127 + _velosity;
+                        if(abs(_velosity)<=1)
+                        {
+                                velosity = 127;
+                        }
+                        else
+                        {
+                                if(_velosity > maxVelosity) _velosity = maxVelosity;
+                                if(_velosity < minVelosity) _velosity = minVelosity; 
+                                velosity = 127 + _velosity;
+                        }
                 }
                 else
                         velosity = 127;                        
