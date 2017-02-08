@@ -136,7 +136,7 @@ void drive_initialisation(void)
 //speed = 127 => скорость СПШ = 0 
 void azModel(void)
 {
-int16_t velosity, _velosity, maxVelosity, minVelosity;    
+int32_t velosity, _velosity, maxVelosity, minVelosity;    
         drive[AZ].position = sensor[AZ].code;
         if(in.msg.mode & 0x01)
         {
@@ -201,7 +201,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
 
 void umModel(void)
 {
-int16_t velosity, _velosity, maxVelosity, minVelosity;
+int32_t velosity, _velosity, maxVelosity, minVelosity;
         drive[UM].position = sensor[UM].code;
 
         if(in.msg.mode & 0x02)
@@ -273,7 +273,7 @@ int16_t velosity, _velosity, maxVelosity, minVelosity;
 
 void fvModel(void)
 {
-int16_t velosity;
+int32_t velosity;
         drive[FV].position = sensor[FV].code;
         if(in.msg.mode & 0x80)
         {
