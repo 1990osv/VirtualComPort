@@ -92,7 +92,7 @@ void sensor_initialisation(void)
         sensor[AZ].gpioClkPort = GPIOD;
         sensor[AZ].gpioClkPin = GPIO_PIN_11;     
         sensor[AZ].bitCount = 16;
-        sensor[AZ].needReadFaultBit = true;
+        sensor[AZ].needReadFaultBit = false;
         sensor[AZ].needInvert =false;
         sensor[AZ].mask = 0xFFFF;
         
@@ -336,16 +336,30 @@ void model(void)
  
         out.msg.driveState &= ~(0x07); // обнулили статус ограничений по трем осям
                 
-//        if(drive[AZ].status)
-//                out.msg.driveState |= 0x01;
-//        if(drive[UM].status)
-//                out.msg.driveState |= 0x02;
-//        if(drive[FV].status)
-//                out.msg.driveState |= 0x04;
-        
-        out.msg.driveState = drive[AZ].limit | 
-                        (drive[UM].limit << 2)| 
-                        (drive[FV].limit << 4);        
+        if(drive[AZ].status)
+        {
+                out.msg.driveState |= 0x01;
+        }
+        else
+        {
+                out.msg.driveState &= ~(0x01);
+        }
+        if(drive[UM].status)
+        {
+                out.msg.driveState |= 0x02;
+        }
+        else
+        {
+                out.msg.driveState &= ~(0x02);
+        }
+        if(drive[FV].status)
+        {
+                out.msg.driveState |= 0x04;
+        }
+        else
+        {
+                out.msg.driveState &= ~(0x04);
+        }
 }
 
 void setDataFaultFlag(void)
