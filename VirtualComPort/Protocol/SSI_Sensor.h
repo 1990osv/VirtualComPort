@@ -26,4 +26,6 @@ typedef struct
 //return true or false sensor state
 bool readValue(SSIsensor* s);
 
+void DWT_Init(void);
+
 #endif /* __SSI_SENSOR_H */

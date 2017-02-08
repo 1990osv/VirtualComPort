@@ -87,22 +87,22 @@ static uint8_t crcOutCompute(uint8_t *data, uint8_t len);
 
 void sensor_initialisation(void)
 {
+        DWT_Init();
         sensor[AZ].gpioDataPort = GPIOD;
         sensor[AZ].gpioDataPin = GPIO_PIN_10; 
         sensor[AZ].gpioClkPort = GPIOD;
         sensor[AZ].gpioClkPin = GPIO_PIN_11;     
         sensor[AZ].bitCount = 16;
-        sensor[AZ].needReadFaultBit = false;
+        sensor[AZ].needReadFaultBit = true;
         sensor[AZ].needInvert =false;
         sensor[AZ].mask = 0xFFFF;
-        
         
         sensor[UM].gpioDataPort = GPIOD;
         sensor[UM].gpioDataPin = GPIO_PIN_8; 
         sensor[UM].gpioClkPort = GPIOD;
         sensor[UM].gpioClkPin = GPIO_PIN_9;     
         sensor[UM].bitCount = 16;
-        sensor[UM].needReadFaultBit = false;
+        sensor[UM].needReadFaultBit = true;
         sensor[UM].needInvert =true;
         sensor[UM].mask = 0xFFFF;
         
@@ -110,11 +110,10 @@ void sensor_initialisation(void)
         sensor[FV].gpioDataPin = GPIO_PIN_14; 
         sensor[FV].gpioClkPort = GPIOB;
         sensor[FV].gpioClkPin = GPIO_PIN_15;     
-        sensor[FV].bitCount = 13;
+        sensor[FV].bitCount = 14;
         sensor[FV].needReadFaultBit = false;        
         sensor[FV].needInvert =false;
         sensor[FV].mask = 0x3FFF;
-
 }
 
 
